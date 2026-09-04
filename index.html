@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strict IPv6 Mixed-Network P2P</title>
+    <title>Strict IPv6 Mixed-Network P2P 4</title>
     <style>
         body { font-family: system-ui, sans-serif; text-align: center; margin: 20px; background: #f4f4f9; color: #333; }
         .video-container { display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 20px; }
@@ -67,15 +67,16 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // Standardized syntax parsing array to support both modern and legacy browsers safely
+        // FIXED CRITICAL SYNTAX: Strict standard-compliant URL layout matching the WebRTC specification
         const rtcConfig = {
             iceServers: [
-                { urls: ['stun:://google.com', 'stun:://google.com'] }
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:stun1.l.google.com:19302" }
             ],
             iceTransportPolicy: 'all'
         };
 
-        // 1. Initialize complete engine securely
+        // 1. Initialize Complete Stack Safely
         initBtn.onclick = async () => {
             try {
                 statusDiv.innerText = "Requesting media...";
@@ -97,6 +98,7 @@
         };
 
         function setupPeerConnection() {
+            // This instantiates correctly using the valid layout config array
             pc = new RTCPeerConnection(rtcConfig);
 
             localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
@@ -114,27 +116,27 @@
                 }
             };
 
-            // STRICT FILTER ENGINE: Exclusively processes routing addresses containing colons (:)
+            // STRICT ENFORCEMENT ENGINE
             const originalAddIceCandidate = pc.addIceCandidate.bind(pc);
             pc.addIceCandidate = function(candidate) {
                 if (candidate && candidate.candidate) {
                     const cStr = candidate.candidate;
 
-                    // Instantly block any third-party relay mappings (TURN)
+                    // Immediately discard standard TURN relay structures
                     if (cStr.includes('typ relay')) {
                         log("🚫 Blocked Relay Candidate");
                         return Promise.resolve();
                     }
 
                     const tokens = cStr.split(' ');
-                    const ip = tokens[4]; // Extract structural candidate IP component
+                    const ip = tokens[4]; // Extract structural component address
 
                     if (ip && ip.includes(':')) {
                         log(`🚀 Injecting Valid IPv6 Path: ${ip}`);
                         return originalAddIceCandidate(candidate);
                     } else {
                         log(`🚫 Dropped IPv4 Route: ${ip}`);
-                        return Promise.resolve(); // Drop all non-IPv6 addresses
+                        return Promise.resolve(); // Hard isolation boundary
                     }
                 }
                 return originalAddIceCandidate(candidate);
