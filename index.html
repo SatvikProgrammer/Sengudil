@@ -182,19 +182,19 @@
     iceTransportPolicy: 'all'
   };
 
-  /* ── IPv6 Filter ────────────────────────────── */
-  function installIPv6Filter(conn) {
+  /* ── P2P Filter (block relays, allow all direct paths) ── */
+  function installP2PFilter(conn) {
     const orig = conn.addIceCandidate.bind(conn);
     conn.addIceCandidate = function (c) {
       if (!c || !c.candidate || c.candidate === '') return orig(c);
       const raw = c.candidate;
-      if (raw.includes('typ relay')) { log(`🚫 Blocked Relay`, 'log-err'); return Promise.resolve(); }
+      if (raw.includes('typ relay')) { log(`🚫 Blocked Relay (not P2P)`, 'log-err'); return Promise.resolve(); }
       const ip = raw.split(' ')[4] || '';
-      if (!ip.includes(':')) { log(`🚫 Dropped IPv4 → ${ip}`, 'log-err'); return Promise.resolve(); }
-      log(`🚀 Injecting IPv6 → ${ip}`, 'log-ok');
+      const type = ip.includes(':') ? 'IPv6' : 'IPv4';
+      log(`🚀 Injecting ${type} → ${ip}`, 'log-ok');
       return orig(c);
     };
-    log('🛡️  IPv6 filter active', 'log-info');
+    log('🛡️  P2P filter active — relays blocked, direct paths allowed', 'log-info');
   }
 
   /* ── Media ──────────────────────────────────── */
@@ -214,7 +214,7 @@
   function buildPC(candidateCollection) {
     if (pc) { pc.close(); pc = null; }
     pc = new RTCPeerConnection(rtcConfig);
-    installIPv6Filter(pc);
+    installP2PFilter(pc);
 
     pc.ontrack = (e) => {
       if (remoteVideo.srcObject !== e.streams[0]) {
@@ -228,8 +228,8 @@
       if (!e.candidate) return;
       const raw = e.candidate.candidate, ip = raw.split(' ')[4] || '';
       if (raw.includes('typ relay')) { log(`🚫 [Local] Blocked Relay`, 'log-err'); return; }
-      if (!ip.includes(':')) { log(`🚫 [Local] Dropped IPv4 → ${ip}`, 'log-err'); return; }
-      log(`🧊 [Local] IPv6 → ${ip}`, 'log-info');
+      const type = ip.includes(':') ? 'IPv6' : 'IPv4';
+      log(`🧊 [Local] ${type} → ${ip}`, 'log-info');
       addDoc(candCol, e.candidate.toJSON());
     };
 
@@ -365,6 +365,10 @@
   };
 
   /* ── Go ─────────────────────────────────────── */
+  log('═══════════════════════════════════════', 'log-dim');
+  log('⚡ P2P Video Call — Trickle ICE', 'log-info');
+  log('🛡️  TURN relays blocked · Direct P2P only', 'log-info');
+  log('═══════════════════════════════════════', 'log-dim');
   autoConnect();
 
 </script>
