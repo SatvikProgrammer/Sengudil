@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strict IPv6 Mixed-Network P2P 4</title>
+    <title>Strict IPv6 P2P Video Tester</title>
     <style>
         body { font-family: system-ui, sans-serif; text-align: center; margin: 20px; background: #f4f4f9; color: #333; }
         .video-container { display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 20px; }
         video { width: 45%; max-width: 400px; min-height: 240px; background: #000; border-radius: 8px; transform: scaleX(-1); }
         .controls { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; margin-top: 10px; width: 90%; max-width: 600px; }
-        textarea { width: 90%; height: 80px; margin: 10px 0; font-family: monospace; font-size: 12px; }
+        textarea { width: 90%; height: 100px; margin: 10px 0; font-family: monospace; font-size: 11px; background: #fafafa; }
         button { padding: 10px 20px; margin: 5px; font-size: 14px; border-radius: 4px; border: none; background: #007bff; color: white; cursor: pointer; font-weight: bold; }
         button:hover { background: #0056b3; }
         .btn-green { background: #28a745; }
@@ -21,18 +21,18 @@
 <body>
 
     <h2>Strict IPv6 Cross-Network Video Tester</h2>
-    <p>Guarantees P2P connection loops stay completely within IPv6 boundaries.</p>
+    <p>Ensures connection paths and media maps compile fully before handshake generation.</p>
 
     <div class="controls">
         <div id="status">Status: Click "Initialize System" to start.</div>
         <button id="init-btn" class="btn-green">1. Initialize System</button>
         <br><br>
         
-        <div><strong>Step 2:</strong> Creator clicks Offer, copies code. Connector pastes code below and answers.</div>
+        <div><strong>Step 2:</strong> Creator clicks Offer and WAITS for compilation. Connector pastes code below and answers.</div>
         <button id="offer-btn" disabled>Create Local Offer Connection Code</button>
         <button id="answer-btn" disabled>Process Remote Code & Answer</button>
         
-        <textarea id="sdp-box" placeholder="Connection data codes will appear or be pasted here..."></textarea>
+        <textarea id="sdp-box" placeholder="Connection data codes will appear here once network addresses compile..."></textarea>
         
         <div class="log-box" id="log-box">Logs:<br></div>
     </div>
@@ -67,16 +67,14 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // FIXED CRITICAL SYNTAX: Strict standard-compliant URL layout matching the WebRTC specification
         const rtcConfig = {
             iceServers: [
-                { urls: "stun:stun.l.google.com:19302" },
-                { urls: "stun:stun1.l.google.com:19302" }
+                { urls: "stun:://google.com" },
+                { urls: "stun:://google.com" }
             ],
             iceTransportPolicy: 'all'
         };
 
-        // 1. Initialize Complete Stack Safely
         initBtn.onclick = async () => {
             try {
                 statusDiv.innerText = "Requesting media...";
@@ -98,70 +96,85 @@
         };
 
         function setupPeerConnection() {
-            // This instantiates correctly using the valid layout config array
             pc = new RTCPeerConnection(rtcConfig);
 
+            // Bind tracks to connection object immediately
             localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
             pc.ontrack = (event) => {
-                log("Incoming remote video track received via IPv6!");
-                remoteVideo.srcObject = event.streams;
+                log("Success: Incoming remote video track received!");
+                if (event.streams && event.streams[0]) {
+                    remoteVideo.srcObject = event.streams[0];
+                } else {
+                    // Fallback configuration if streaming parameters arrive separated
+                    if (!remoteVideo.srcObject) {
+                        remoteVideo.srcObject = new MediaStream([event.track]);
+                    } else {
+                        remoteVideo.srcObject.addTrack(event.track);
+                    }
+                }
             };
 
             pc.oniceconnectionstatechange = () => {
                 log(`ICE Connection State: ${pc.iceConnectionState}`);
+                if (pc.iceConnectionState === 'connected') {
+                    statusDiv.innerText = "Connected! Video should be streaming.";
+                    statusDiv.style.color = "green";
+                }
                 if (pc.iceConnectionState === 'failed') {
                     statusDiv.innerText = "Connection Failed! IPv6 route was firewalled.";
                     statusDiv.style.color = "red";
                 }
             };
 
-            // STRICT ENFORCEMENT ENGINE
+            // TRACKING THE NETWORK COMPILE STATE: This is what prevents empty SDP codes!
+            pc.onicegatheringstatechange = () => {
+                log(`Network Candidate Gathering State: ${pc.iceGatheringState}`);
+                if (pc.iceGatheringState === 'complete') {
+                    log("✅ Network layout fully compiled! Code updated in text block.");
+                    sdpBox.value = btoa(JSON.stringify(pc.localDescription));
+                    statusDiv.innerText = "Status: Code fully compiled! Ready to copy.";
+                }
+            };
+
+            // STRICT FILTER ENGINE
             const originalAddIceCandidate = pc.addIceCandidate.bind(pc);
             pc.addIceCandidate = function(candidate) {
                 if (candidate && candidate.candidate) {
                     const cStr = candidate.candidate;
 
-                    // Immediately discard standard TURN relay structures
                     if (cStr.includes('typ relay')) {
                         log("🚫 Blocked Relay Candidate");
                         return Promise.resolve();
                     }
 
                     const tokens = cStr.split(' ');
-                    const ip = tokens[4]; // Extract structural component address
+                    const ip = tokens;
 
                     if (ip && ip.includes(':')) {
                         log(`🚀 Injecting Valid IPv6 Path: ${ip}`);
                         return originalAddIceCandidate(candidate);
                     } else {
                         log(`🚫 Dropped IPv4 Route: ${ip}`);
-                        return Promise.resolve(); // Hard isolation boundary
+                        return Promise.resolve();
                     }
                 }
                 return originalAddIceCandidate(candidate);
             };
         }
 
-        // 2. Creator creates connection code
         offerBtn.onclick = async () => {
-            log("Generating local offer configurations...");
+            log("Generating local connection offer... compiling addresses...");
             try {
+                statusDiv.innerText = "Status: Gathering network routes... PLEASE WAIT.";
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
-                
-                // Allow network interfaces a brief window to gather local addresses
-                setTimeout(() => {
-                    sdpBox.value = btoa(JSON.stringify(pc.localDescription));
-                    log("Code generated! Copy the text in the box to the other device.");
-                    statusDiv.innerText = "Status: Code generated. Send it to the other peer.";
-                }, 1200);
+                // Note: The box will automatically fill when pc.iceGatheringState reaches 'complete'
             } catch (e) {
                 log(`Offer Generation Failure: ${e.message}`);
             }
         };
 
-        // 3. Receiver processes code or creates answer response
         answerBtn.onclick = async () => {
             const rawInput = sdpBox.value.trim();
             if (!rawInput) {
@@ -174,18 +187,14 @@
                 await pc.setRemoteDescription(new RTCSessionDescription(remoteDesc));
 
                 if (remoteDesc.type === 'offer') {
-                    log("Processing offer code... creating answer response...");
+                    log("Processing offer code... compiling matching answer tracks...");
+                    statusDiv.innerText = "Status: Compiling answer routes... PLEASE WAIT.";
                     const answer = await pc.createAnswer();
                     await pc.setLocalDescription(answer);
-                    
-                    setTimeout(() => {
-                        sdpBox.value = btoa(JSON.stringify(pc.localDescription));
-                        log("Answer code ready! Copy back to the initiator phone.");
-                        statusDiv.innerText = "Status: Answer ready. Copy back to initiator.";
-                    }, 1200);
+                    // Note: The box will automatically fill when pc.iceGatheringState reaches 'complete'
                 } else if (remoteDesc.type === 'answer') {
                     log("Processing answer code... Finalizing connection handshake...");
-                    statusDiv.innerText = "Status: Handshake processed. Connecting...";
+                    statusDiv.innerText = "Status: Finalizing handshake maps...";
                 }
             } catch (err) {
                 log(`Handshake Error: ${err.message}`);
