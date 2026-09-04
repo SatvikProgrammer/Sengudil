@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strict IPv6 P2P Video Call 2</title>
+    <title>Strict IPv6 P2P Video Call 3</title>
     <!-- Include PeerJS Library via CDN -->
     <script src="https://unpkg.com"></script>
     <style>
@@ -27,7 +27,7 @@
         <br>
         <input type="text" id="remote-id" placeholder="Paste Remote Peer ID here">
         <button id="call-btn">Start IPv6 Video Call</button>
-        <div id="status">Status: Initializing connection...</div>
+        <div id="status">Status: Requesting camera permissions...</div>
     </div>
 
     <div class="video-container">
@@ -52,131 +52,131 @@
         let localStream = null;
         let peer = null;
 
-        // Configuration forcing Google's dual-stack STUN servers
-        const strictIPv6Config = {
+        // FIXED PARAMETERS: This allows communication with the PeerJS signaling 
+        // cloud broker properly while passing our strict direct P2P connection constraints.
+        const peerOptions = {
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true,
+            path: '/',
             config: {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
                     { urls: 'stun:stun1.l.google.com:19302' }
                 ],
                 iceTransportPolicy: 'all'
-            }
+            },
+            debug: 3 // Enables verbose logging to the browser console to trace connection paths
         };
 
-        // FIX 1: Initialize PeerJS immediately so 'peer' is NEVER undefined
-        function initPeer() {
-            peer = new Peer(strictIPv6Config);
+        // 1. First get media permissions to prevent stream initialization racing issues
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                localStream = stream;
+                localVideo.srcObject = stream;
+                statusDiv.innerText = "Camera ready. Establishing signaling network connection...";
+                initPeerConnectionSystem();
+            })
+            .catch(err => {
+                console.error("Camera Error:", err);
+                statusDiv.innerHTML = `<span style='color:red;'>Camera Error: ${err.message}. Please reload and grant hardware access.</span>`;
+            });
+
+        // 2. Initialize PeerJS once media is locked
+        function initPeerConnectionSystem() {
+            peer = new Peer(peerOptions);
 
             peer.on('open', (id) => {
                 myIdSpan.innerText = id;
-                statusDiv.innerText = "Status: Online! Requesting camera permissions...";
-                requestCamera();
+                statusDiv.innerText = "Status: Online! Ready to link using direct IPv6 pathways.";
             });
 
             peer.on('error', (err) => {
-                console.error("PeerJS Error:", err);
-                statusDiv.innerText = `PeerJS Error: ${err.type}`;
+                console.error("PeerJS Core Error:", err);
+                statusDiv.innerText = `Network Error: ${err.type}`;
             });
 
-            // Handle Incoming Call
+            // Catch and handle incoming connection requests
             peer.on('call', (incomingCall) => {
-                statusDiv.innerText = "Status: Incoming call! Stripping IPv4 metrics...";
-                enforceIPv6Only(incomingCall.peerConnection);
-
-                if (!localStream) {
-                    statusDiv.innerText = "Error: Cannot answer. Camera stream not ready.";
-                    return;
-                }
+                statusDiv.innerText = "Incoming request detected. Inspecting connectivity maps...";
                 
+                // Hook direct network validation mechanisms
+                applyStrictIPv6Filter(incomingCall.peerConnection);
+
                 incomingCall.answer(localStream);
-                setupStreamHandlers(incomingCall);
+                bindCallStreams(incomingCall);
             });
         }
 
-        // FIX 2: Decoupled camera request system
-        async function requestCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localStream = stream;
-                localVideo.srcObject = stream;
-                statusDiv.innerText = "Status: Ready! Share your ID to start IPv6 P2P call.";
-            } catch (err) {
-                console.error("Camera Error:", err);
-                statusDiv.innerHTML = `<span style='color:orange;'>Camera Warning: ${err.message}. (Please accept browser permission prompts)</span>`;
-            }
-        }
-
-        // 3. Initiate Outbound Call
+        // 3. Fire outgoing connection requests
         callBtn.onclick = () => {
-            const targetId = remoteIdInput.value.trim();
-            if (!targetId) {
-                alert("Please enter a valid Remote Peer ID");
+            const destinationId = remoteIdInput.value.trim();
+            if (!destinationId) {
+                alert("Please paste a valid Remote Peer ID first.");
                 return;
             }
             if (!localStream) {
-                alert("Please allow camera access before placing a call.");
+                alert("Local media stream is missing.");
                 return;
             }
 
-            statusDiv.innerText = "Status: Dialing peer and punching IPv6 firewalls...";
-            const outboundCall = peer.call(targetId, localStream);
+            statusDiv.innerText = "Punching direct cellular firewalls via STUN...";
+            const outboundCall = peer.call(destinationId, localStream);
             
-            enforceIPv6Only(outboundCall.peerConnection);
-            setupStreamHandlers(outboundCall);
+            applyStrictIPv6Filter(outboundCall.peerConnection);
+            bindCallStreams(outboundCall);
         };
 
-        // 4. Attach video streams and handle connection states
-        function setupStreamHandlers(call) {
-            call.on('stream', (remoteStream) => {
+        // 4. Attach remote stream elements to HTML layer
+        function bindCallStreams(activeCall) {
+            activeCall.on('stream', (remoteStream) => {
                 remoteVideo.srcObject = remoteStream;
-                statusDiv.innerText = "Status: Connected! Live direct P2P stream established.";
+                statusDiv.innerHTML = "<span style='color:green;'>Status: Connected! Streaming directly peer-to-peer over IPv6.</span>";
             });
 
-            call.on('close', () => {
-                statusDiv.innerText = "Status: Call ended.";
+            activeCall.on('close', () => {
+                statusDiv.innerText = "Status: Session disconnected.";
             });
         }
 
-        // 5. The IPv6 Enforcement Engine
-        function enforceIPv6Only(rtcPeerConnection) {
+        // 5. The Aggressive IPv6 Traversal Filtering Core
+        function applyStrictIPv6Filter(rtcPeerConnection) {
             if (!rtcPeerConnection) return;
 
             rtcPeerConnection.oniceconnectionstatechange = () => {
-                console.log("ICE Connection State changed:", rtcPeerConnection.iceConnectionState);
-                statusDiv.innerText = `ICE State: ${rtcPeerConnection.iceConnectionState}`;
-
+                console.log("ICE Connection Infrastructure State:", rtcPeerConnection.iceConnectionState);
+                
                 if (rtcPeerConnection.iceConnectionState === 'failed') {
-                    statusDiv.innerHTML = "<span style='color:red;'>Connection Failed! Carrier firewalls blocked direct IPv6 P2P.</span>";
+                    statusDiv.innerHTML = "<span style='color:red;'>Connection Failed! Direct IPv6 P2P blocked by restrictive network firewalls.</span>";
                 }
             };
 
-            const originalAddIceCandidate = rtcPeerConnection.addIceCandidate.bind(rtcPeerConnection);
+            const upstreamAddIceCandidate = rtcPeerConnection.addIceCandidate.bind(rtcPeerConnection);
             
             rtcPeerConnection.addIceCandidate = function(candidate) {
                 if (candidate && candidate.candidate) {
-                    const cStr = candidate.candidate;
+                    const structuralString = candidate.candidate;
 
-                    if (cStr.includes('typ relay')) {
-                        console.log("⚠️ Blocked Relay Candidate:", cStr);
+                    // Immediately drop any standard TURN network relays
+                    if (structuralString.includes('typ relay')) {
+                        console.log("🚫 Dropped Relay Candidate:", structuralString);
                         return Promise.resolve(); 
                     }
 
-                    const tokens = cStr.split(' ');
-                    const ipAddress = tokens[4]; // Extract structural IP value from ICE metric
+                    const segmentedTokens = structuralString.split(' ');
+                    const parsedIpAddress = segmentedTokens[4]; // Extract precise candidate IP component
                     
-                    if (ipAddress && !ipAddress.includes(':')) {
-                        console.log("⚠️ Dropped IPv4 Candidate:", ipAddress);
+                    // Reject traditional IPv4 structures. IPv6 candidates natively contain colons (:)
+                    if (parsedIpAddress && !parsedIpAddress.includes(':')) {
+                        console.log("🚫 Blocked IPv4 Route:", parsedIpAddress);
                         return Promise.resolve(); 
                     }
                     
-                    console.log("✅ Allowed IPv6 Candidate:", ipAddress);
+                    console.log("🚀 Injecting Valid IPv6 Path:", parsedIpAddress);
                 }
-                return originalAddIceCandidate(candidate);
+                return upstreamAddIceCandidate(candidate);
             };
         }
-
-        // Start execution instantly on page load
-        initPeer();
     </script>
 </body>
 </html>
