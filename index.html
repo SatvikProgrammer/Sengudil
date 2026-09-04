@@ -3,31 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strict IPv6 P2P Video Call 3</title>
-    <!-- Include PeerJS Library via CDN -->
-    <script src="https://unpkg.com"></script>
+    <title>Pure IPv6 P2P Video Tester</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; margin: 20px; background: #f4f4f9; color: #333; }
+        body { font-family: system-ui, sans-serif; text-align: center; margin: 20px; background: #f4f4f9; color: #333; }
         .video-container { display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 20px; }
         video { width: 45%; max-width: 400px; min-height: 240px; background: #000; border-radius: 8px; transform: scaleX(-1); }
-        .controls { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; margin-top: 10px; max-width: 90%; }
-        input, button { padding: 10px; margin: 5px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; }
-        button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        .controls { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; margin-top: 10px; width: 90%; max-width: 600px; }
+        textarea { width: 90%; height: 80px; margin: 10px 0; font-family: monospace; font-size: 12px; }
+        button { padding: 10px 20px; margin: 5px; font-size: 14px; border-radius: 4px; border: none; background: #007bff; color: white; cursor: pointer; font-weight: bold; }
         button:hover { background: #0056b3; }
-        #status { font-weight: bold; margin-top: 15px; color: #666; }
+        .btn-green { background: #28a745; }
+        .btn-green:hover { background: #218838; }
+        #status { font-weight: bold; margin-top: 15px; color: #ff6b6b; }
+        .log-box { text-align: left; background: #222; color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; max-height: 150px; overflow-y: auto; font-size: 11px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <h2>Strict IPv6 P2P Video Call</h2>
-    <p>Testing true serverless P2P over cellular networks</p>
+    <h2>Pure IPv6 P2P Video Call (No Server)</h2>
+    <p>Using manual signaling to guarantee 100% control over the connection path.</p>
 
     <div class="controls">
-        <div><strong>Your Peer ID:</strong> <span id="my-id" style="color:#007bff;">Generating...</span></div>
-        <br>
-        <input type="text" id="remote-id" placeholder="Paste Remote Peer ID here">
-        <button id="call-btn">Start IPv6 Video Call</button>
-        <div id="status">Status: Requesting camera permissions...</div>
+        <div id="status">Status: Click "Initialize System" to start.</div>
+        <button id="init-btn" class="btn-green">1. Initialize System</button>
+        <br><br>
+        
+        <div><strong>Step 2:</strong> Creator clicks Offer, joins on phone, copies code. Connector pastes code below and answers.</div>
+        <button id="offer-btn" disabled>Create Local Offer Connection Code</button>
+        <button id="answer-btn" disabled>Process Remote Code & Answer</button>
+        
+        <textarea id="sdp-box" placeholder="Connection data codes will appear or be pasted here..."></textarea>
+        
+        <div class="log-box" id="log-box">Logs:<br></div>
     </div>
 
     <div class="video-container">
@@ -45,138 +52,136 @@
         const localVideo = document.getElementById('localVideo');
         const remoteVideo = document.getElementById('remoteVideo');
         const statusDiv = document.getElementById('status');
-        const myIdSpan = document.getElementById('my-id');
-        const remoteIdInput = document.getElementById('remote-id');
-        const callBtn = document.getElementById('call-btn');
+        const sdpBox = document.getElementById('sdp-box');
+        const logBox = document.getElementById('log-box');
+        
+        const initBtn = document.getElementById('init-btn');
+        const offerBtn = document.getElementById('offer-btn');
+        const answerBtn = document.getElementById('answer-btn');
 
         let localStream = null;
-        let peer = null;
+        let pc = null;
 
-        // FIXED PARAMETERS: This allows communication with the PeerJS signaling 
-        // cloud broker properly while passing our strict direct P2P connection constraints.
-        const peerOptions = {
-            host: '0.peerjs.com',
-            port: 443,
-            secure: true,
-            path: '/',
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ],
-                iceTransportPolicy: 'all'
-            },
-            debug: 3 // Enables verbose logging to the browser console to trace connection paths
-        };
-
-        // 1. First get media permissions to prevent stream initialization racing issues
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
-                localStream = stream;
-                localVideo.srcObject = stream;
-                statusDiv.innerText = "Camera ready. Establishing signaling network connection...";
-                initPeerConnectionSystem();
-            })
-            .catch(err => {
-                console.error("Camera Error:", err);
-                statusDiv.innerHTML = `<span style='color:red;'>Camera Error: ${err.message}. Please reload and grant hardware access.</span>`;
-            });
-
-        // 2. Initialize PeerJS once media is locked
-        function initPeerConnectionSystem() {
-            peer = new Peer(peerOptions);
-
-            peer.on('open', (id) => {
-                myIdSpan.innerText = id;
-                statusDiv.innerText = "Status: Online! Ready to link using direct IPv6 pathways.";
-            });
-
-            peer.on('error', (err) => {
-                console.error("PeerJS Core Error:", err);
-                statusDiv.innerText = `Network Error: ${err.type}`;
-            });
-
-            // Catch and handle incoming connection requests
-            peer.on('call', (incomingCall) => {
-                statusDiv.innerText = "Incoming request detected. Inspecting connectivity maps...";
-                
-                // Hook direct network validation mechanisms
-                applyStrictIPv6Filter(incomingCall.peerConnection);
-
-                incomingCall.answer(localStream);
-                bindCallStreams(incomingCall);
-            });
+        function log(msg) {
+            logBox.innerHTML += `> ${msg}<br>`;
+            logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // 3. Fire outgoing connection requests
-        callBtn.onclick = () => {
-            const destinationId = remoteIdInput.value.trim();
-            if (!destinationId) {
-                alert("Please paste a valid Remote Peer ID first.");
-                return;
-            }
-            if (!localStream) {
-                alert("Local media stream is missing.");
-                return;
-            }
-
-            statusDiv.innerText = "Punching direct cellular firewalls via STUN...";
-            const outboundCall = peer.call(destinationId, localStream);
-            
-            applyStrictIPv6Filter(outboundCall.peerConnection);
-            bindCallStreams(outboundCall);
+        // Standard configuration targeting public, global STUN systems
+        const rtcConfig = {
+            iceServers: [{ urls: 'stun:://google.com' }],
+            iceTransportPolicy: 'all'
         };
 
-        // 4. Attach remote stream elements to HTML layer
-        function bindCallStreams(activeCall) {
-            activeCall.on('stream', (remoteStream) => {
-                remoteVideo.srcObject = remoteStream;
-                statusDiv.innerHTML = "<span style='color:green;'>Status: Connected! Streaming directly peer-to-peer over IPv6.</span>";
-            });
-
-            activeCall.on('close', () => {
-                statusDiv.innerText = "Status: Session disconnected.";
-            });
-        }
-
-        // 5. The Aggressive IPv6 Traversal Filtering Core
-        function applyStrictIPv6Filter(rtcPeerConnection) {
-            if (!rtcPeerConnection) return;
-
-            rtcPeerConnection.oniceconnectionstatechange = () => {
-                console.log("ICE Connection Infrastructure State:", rtcPeerConnection.iceConnectionState);
+        // 1. Initialize complete stack safely
+        initBtn.onclick = async () => {
+            try {
+                statusDiv.innerText = "Requesting media...";
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
                 
-                if (rtcPeerConnection.iceConnectionState === 'failed') {
-                    statusDiv.innerHTML = "<span style='color:red;'>Connection Failed! Direct IPv6 P2P blocked by restrictive network firewalls.</span>";
+                log("Camera initialized successfully.");
+                setupPeerConnection();
+                
+                initBtn.disabled = true;
+                offerBtn.disabled = false;
+                answerBtn.disabled = false;
+                statusDiv.innerText = "Status: Ready. Follow Step 2.";
+                statusDiv.style.color = "green";
+            } catch (err) {
+                log(`Initialization Error: ${err.message}`);
+                statusDiv.innerText = `Error: ${err.message}`;
+            }
+        };
+
+        function setupPeerConnection() {
+            pc = new RTCPeerConnection(rtcConfig);
+
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            pc.ontrack = (event) => {
+                log("Incoming remote video track received!");
+                remoteVideo.srcObject = event.streams[0];
+            };
+
+            pc.oniceconnectionstatechange = () => {
+                log(`ICE Connection State: ${pc.iceConnectionState}`);
+                if (pc.iceConnectionState === 'failed') {
+                    statusDiv.innerText = "Connection Failed! IPv6 route was firewalled.";
+                    statusDiv.style.color = "red";
                 }
             };
 
-            const upstreamAddIceCandidate = rtcPeerConnection.addIceCandidate.bind(rtcPeerConnection);
-            
-            rtcPeerConnection.addIceCandidate = function(candidate) {
+            // Aggressive Network Filter for True IPv6 paths
+            const originalAddIceCandidate = pc.addIceCandidate.bind(pc);
+            pc.addIceCandidate = function(candidate) {
                 if (candidate && candidate.candidate) {
-                    const structuralString = candidate.candidate;
+                    const cStr = candidate.candidate;
 
-                    // Immediately drop any standard TURN network relays
-                    if (structuralString.includes('typ relay')) {
-                        console.log("🚫 Dropped Relay Candidate:", structuralString);
-                        return Promise.resolve(); 
+                    if (cStr.includes('typ relay')) {
+                        log("🚫 Blocked Relay Candidate");
+                        return Promise.resolve();
                     }
 
-                    const segmentedTokens = structuralString.split(' ');
-                    const parsedIpAddress = segmentedTokens[4]; // Extract precise candidate IP component
-                    
-                    // Reject traditional IPv4 structures. IPv6 candidates natively contain colons (:)
-                    if (parsedIpAddress && !parsedIpAddress.includes(':')) {
-                        console.log("🚫 Blocked IPv4 Route:", parsedIpAddress);
-                        return Promise.resolve(); 
+                    const tokens = cStr.split(' ');
+                    const ip = tokens[4];
+
+                    if (ip && !ip.includes(':')) {
+                        log(`🚫 Dropped IPv4 Route: ${ip}`);
+                        return Promise.resolve();
                     }
-                    
-                    console.log("🚀 Injecting Valid IPv6 Path:", parsedIpAddress);
+
+                    log(`🚀 Injecting Valid IPv6 Path: ${ip}`);
                 }
-                return upstreamAddIceCandidate(candidate);
+                return originalAddIceCandidate(candidate);
             };
         }
+
+        // 2. Creator creates connection code
+        offerBtn.onclick = async () => {
+            log("Generating local offer...");
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            
+            // Wait briefly for local network layout calculation to bundle addresses
+            setTimeout(() => {
+                sdpBox.value = btoa(JSON.stringify(pc.localDescription));
+                log("Connection code generated in text area! Copy it to the other device.");
+                statusDiv.innerText = "Status: Code generated. Copy & send it to the other peer.";
+            }, 1000);
+        };
+
+        // 3. Receiver processes code or creates answer response
+        answerBtn.onclick = async () => {
+            const rawInput = sdpBox.value.trim();
+            if (!rawInput) {
+                alert("Please paste the connection code into the textarea first.");
+                return;
+            }
+
+            try {
+                const remoteDesc = JSON.parse(atob(rawInput));
+                await pc.setRemoteDescription(new RTCSessionDescription(remoteDesc));
+
+                if (remoteDesc.type === 'offer') {
+                    log("Processing offer code... creating answer...");
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    
+                    setTimeout(() => {
+                        sdpBox.value = btoa(JSON.stringify(pc.localDescription));
+                        log("Answer code ready! Copy back to the initiator phone.");
+                        statusDiv.innerText = "Status: Answer ready. Copy back to initiator.";
+                    }, 1000);
+                } else if (remoteDesc.type === 'answer') {
+                    log("Processing answer code... Finalizing connection handshake...");
+                    statusDiv.innerText = "Status: Processing network handshake...";
+                }
+            } catch (err) {
+                log(`Handshake Error: ${err.message}`);
+                alert("Invalid connection code structure.");
+            }
+        };
     </script>
 </body>
 </html>
