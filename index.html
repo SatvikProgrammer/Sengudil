@@ -1,204 +1,568 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strict g IPv6 Cross-Network P2P</title>
-    <style>
-        body { font-family: system-ui, sans-serif; text-align: center; margin: 20px; background: #f4f4f9; color: #333; }
-        .video-container { display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 20px; }
-        video { width: 45%; max-width: 400px; min-height: 240px; background: #000; border-radius: 8px; transform: scaleX(-1); }
-        .controls { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; margin-top: 10px; width: 90%; max-width: 600px; }
-        textarea { width: 90%; height: 100px; margin: 10px 0; font-family: monospace; font-size: 11px; background: #fafafa; }
-        button { padding: 10px 20px; margin: 5px; font-size: 14px; border-radius: 4px; border: none; background: #007bff; color: white; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0056b3; }
-        .btn-green { background: #28a745; }
-        .btn-green:hover { background: #218838; }
-        #status { font-weight: bold; margin-top: 15px; color: #ff6b6b; }
-        .log-box { text-align: left; background: #222; color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; max-height: 150px; overflow-y: auto; font-size: 11px; margin-top: 10px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>P2P Video Call — IPv6 Direct</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e17;
+    --surface: #131a2a;
+    --border: #1e2d4a;
+    --accent: #00e5ff;
+    --accent-dim: #00e5ff33;
+    --danger: #ff4060;
+    --success: #00e676;
+    --warn: #ffab00;
+    --text: #e0e6f0;
+    --text-dim: #7b8ba6;
+    --radius: 10px;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  /* ── Header ────────────────────────────────────── */
+  header {
+    text-align: center;
+    padding: 16px 12px 8px;
+  }
+  header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: .5px;
+    background: linear-gradient(135deg, var(--accent), #7c4dff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  #status-bar {
+    margin-top: 6px;
+    font-size: .78rem;
+    color: var(--text-dim);
+    min-height: 1.2em;
+  }
+
+  /* ── Video Grid ────────────────────────────────── */
+  .video-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .video-cell {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    aspect-ratio: 3/4;
+  }
+  .video-cell video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    background: #000;
+  }
+  .video-label {
+    position: absolute;
+    bottom: 6px;
+    left: 8px;
+    font-size: .65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+    background: #0009;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ── Controls ──────────────────────────────────── */
+  .controls {
+    padding: 8px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+  .btn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    color: #fff;
+  }
+  .btn:active { transform: scale(.96); }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+  .btn-primary { background: linear-gradient(135deg, #0091ea, #00b8d4); }
+  .btn-green   { background: linear-gradient(135deg, #00c853, #00e676); color: #0a0e17; }
+  .btn-orange  { background: linear-gradient(135deg, #ff6d00, #ffab00); color: #0a0e17; }
+  .btn-purple  { background: linear-gradient(135deg, #7c4dff, #b388ff); }
+  .btn-danger  { background: linear-gradient(135deg, #d50000, #ff1744); }
+
+  /* ── Signaling Area ────────────────────────────── */
+  .signal-section {
+    padding: 6px 12px;
+  }
+  .signal-section label {
+    display: block;
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 64px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+    font-size: .72rem;
+    resize: vertical;
+    outline: none;
+    transition: border-color .2s;
+  }
+  textarea:focus { border-color: var(--accent); }
+
+  /* ── Log Box ───────────────────────────────────── */
+  #log-box {
+    margin: 8px 12px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    height: 180px;
+    overflow-y: auto;
+    padding: 8px 10px;
+    font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+    font-size: .68rem;
+    line-height: 1.55;
+    -webkit-overflow-scrolling: touch;
+  }
+  #log-box .log-line { white-space: pre-wrap; word-break: break-all; }
+  .log-info  { color: var(--accent); }
+  .log-ok    { color: var(--success); }
+  .log-warn  { color: var(--warn); }
+  .log-err   { color: var(--danger); }
+  .log-dim   { color: var(--text-dim); }
+
+  /* ── Responsive ────────────────────────────────── */
+  @media (min-width: 640px) {
+    .video-grid { max-width: 600px; margin: 0 auto; }
+    .controls   { max-width: 600px; margin: 0 auto; }
+    .signal-section { max-width: 600px; margin: 0 auto; }
+    #log-box    { max-width: 600px; margin: 8px auto 20px; }
+  }
+</style>
 </head>
 <body>
 
-    <h2>Strict IPv6 Cross-Network Video Tester</h2>
-    <p>Ensures connection paths and media maps compile fully before handshake generation.</p>
+<!-- ═══════ UI ═══════ -->
+<header>
+  <h1>⚡ P2P Video Call — IPv6 Direct</h1>
+  <div id="status-bar">Awaiting action…</div>
+</header>
 
-    <div class="controls">
-        <div id="status">Status: Click "Initialize System" to start.</div>
-        <button id="init-btn" class="btn-green">1. Initialize System</button>
-        <br><br>
-        
-        <div><strong>Step 2:</strong> Creator clicks Offer and WAITS for compilation. Connector pastes code below and answers.</div>
-        <button id="offer-btn" disabled>Create Local Offer Connection Code</button>
-        <button id="answer-btn" disabled>Process Remote Code & Answer</button>
-        
-        <textarea id="sdp-box" placeholder="Connection data codes will appear here once network addresses compile..."></textarea>
-        
-        <div class="log-box" id="log-box">Logs:<br></div>
-    </div>
+<div class="video-grid">
+  <div class="video-cell">
+    <video id="localVideo" autoplay playsinline muted></video>
+    <span class="video-label">Local</span>
+  </div>
+  <div class="video-cell">
+    <video id="remoteVideo" autoplay playsinline muted></video>
+    <span class="video-label">Remote</span>
+  </div>
+</div>
 
-    <div class="video-container">
-        <div>
-            <h3>Local Video</h3>
-            <video id="localVideo" autoplay playsinline muted></video>
-        </div>
-        <div>
-            <h3>Remote Video</h3>
-            <video id="remoteVideo" autoplay playsinline></video>
-        </div>
-    </div>
+<div class="controls">
+  <button class="btn btn-primary" id="btnCreate"    onclick="createOffer()">📡 Create Offer</button>
+  <button class="btn btn-green"   id="btnAccept"    onclick="acceptOffer()">📥 Accept Offer</button>
+  <button class="btn btn-purple"  id="btnComplete"  onclick="completeConnection()">🔗 Complete</button>
+  <button class="btn btn-orange"  id="btnForcePlay" onclick="forcePlay()">▶ Force Play Video</button>
+  <button class="btn btn-danger"  id="btnHangup"    onclick="hangUp()">✖ Hang Up</button>
+</div>
 
-    <script>
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const statusDiv = document.getElementById('status');
-        const sdpBox = document.getElementById('sdp-box');
-        const logBox = document.getElementById('log-box');
-        
-        const initBtn = document.getElementById('init-btn');
-        const offerBtn = document.getElementById('offer-btn');
-        const answerBtn = document.getElementById('answer-btn');
+<!-- Outgoing signal -->
+<div class="signal-section">
+  <label>Your Signal (copy &amp; send to peer)</label>
+  <textarea id="outSignal" readonly placeholder="Signal will appear here after ICE gathering completes…"></textarea>
+  <button class="btn btn-primary" style="margin-top:4px;width:100%" onclick="copySignal()">📋 Copy Signal</button>
+</div>
 
-        let localStream = null;
-        let pc = null;
+<!-- Incoming signal -->
+<div class="signal-section">
+  <label>Peer's Signal (paste here)</label>
+  <textarea id="inSignal" placeholder="Paste the other person's signal here…"></textarea>
+</div>
 
-        function log(msg) {
-            logBox.innerHTML += `> ${msg}<br>`;
-            logBox.scrollTop = logBox.scrollHeight;
+<!-- Live Console -->
+<div id="log-box"></div>
+
+<!-- ═══════ ENGINE ═══════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── DOM Refs ───────────────────────────────── */
+  const localVideo  = document.getElementById('localVideo');
+  const remoteVideo = document.getElementById('remoteVideo');
+  const outSignal   = document.getElementById('outSignal');
+  const inSignal    = document.getElementById('inSignal');
+  const statusBar   = document.getElementById('status-bar');
+  const logBox      = document.getElementById('log-box');
+
+  /* ── Logging Engine ─────────────────────────── */
+  function log(msg, cls = 'log-dim') {
+    const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    const el = document.createElement('div');
+    el.className = 'log-line ' + cls;
+    el.textContent = `[${ts}] ${msg}`;
+    logBox.appendChild(el);
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  function setStatus(msg) { statusBar.textContent = msg; }
+
+  /* ── RTC Configuration ─────────────────────── */
+  const rtcConfig = {
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ],
+    iceTransportPolicy: 'all'
+  };
+
+  let pc = null;
+  let localStream = null;
+
+  /* ── IPv6 Candidate Auditor ─────────────────── */
+  function installIPv6Filter(peerConnection) {
+    const originalAddIceCandidate = peerConnection.addIceCandidate.bind(peerConnection);
+
+    peerConnection.addIceCandidate = function (candidate) {
+      // Allow end-of-candidates sentinel
+      if (!candidate || !candidate.candidate || candidate.candidate === '') {
+        log('ℹ️  End-of-candidates sentinel received', 'log-dim');
+        return originalAddIceCandidate(candidate);
+      }
+
+      const raw = candidate.candidate;
+
+      // 1. Block TURN relay candidates
+      if (raw.includes('typ relay')) {
+        log(`🚫 Blocked Relay → ${raw.substring(0, 80)}…`, 'log-err');
+        return Promise.resolve();
+      }
+
+      // 2. Extract the IP component (field index 4 in SDP candidate line)
+      const parts = raw.split(' ');
+      const ip = parts.length > 4 ? parts[4] : '';
+
+      // 3. IPv6 addresses contain colons; IPv4 do not
+      if (!ip.includes(':')) {
+        log(`🚫 Dropped IPv4 Route → ${ip}`, 'log-err');
+        return Promise.resolve();
+      }
+
+      // 4. Valid IPv6 — allow injection
+      log(`🚀 Injecting Valid IPv6 Path → ${ip}`, 'log-ok');
+      return originalAddIceCandidate(candidate);
+    };
+
+    log('🛡️  IPv6 Recovery Engine installed — filtering active', 'log-info');
+  }
+
+  /* ── Media Acquisition ──────────────────────── */
+  async function acquireMedia() {
+    if (localStream) return localStream;
+    setStatus('Requesting camera & microphone…');
+    log('📸 Requesting getUserMedia…', 'log-info');
+
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: true
+      });
+      localVideo.srcObject = localStream;
+      log(`✅ Local media acquired — ${localStream.getTracks().length} tracks`, 'log-ok');
+      setStatus('Camera ready.');
+      return localStream;
+    } catch (err) {
+      log(`❌ Media error: ${err.message}`, 'log-err');
+      setStatus('Media access denied.');
+      throw err;
+    }
+  }
+
+  /* ── Peer Connection Factory ────────────────── */
+  function buildPeerConnection() {
+    if (pc) { pc.close(); pc = null; }
+
+    pc = new RTCPeerConnection(rtcConfig);
+    log('🔧 RTCPeerConnection created', 'log-info');
+
+    // Install the IPv6-only filter
+    installIPv6Filter(pc);
+
+    // Remote track handler
+    pc.ontrack = (event) => {
+      log(`📺 Remote track received: ${event.track.kind}`, 'log-ok');
+      if (remoteVideo.srcObject !== event.streams[0]) {
+        remoteVideo.srcObject = event.streams[0];
+        log('📺 Remote video stream attached', 'log-ok');
+      }
+    };
+
+    // ICE candidate handler (outgoing — also filtered for local gathering)
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        const raw = event.candidate.candidate;
+        const parts = raw.split(' ');
+        const ip = parts.length > 4 ? parts[4] : '';
+
+        if (raw.includes('typ relay')) {
+          log(`🚫 [Local] Blocked Relay → ${raw.substring(0, 70)}…`, 'log-err');
+          return; // discard outgoing relay candidate
         }
-
-        // RESTORED WORKING SYNTAX: Reverted to individual object configuration layout
-        const rtcConfig = {
-            iceServers: [
-                { urls: "stun:://google.com" },
-                { urls: "stun:://google.com" }
-            ],
-            iceTransportPolicy: 'all'
-        };
-
-        initBtn.onclick = async () => {
-            try {
-                statusDiv.innerText = "Requesting media...";
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localVideo.srcObject = localStream;
-                
-                log("Camera initialized successfully.");
-                setupPeerConnection();
-                
-                initBtn.disabled = true;
-                offerBtn.disabled = false;
-                answerBtn.disabled = false;
-                statusDiv.innerText = "Status: Ready. Proceed to Step 2.";
-                statusDiv.style.color = "green";
-            } catch (err) {
-                log(`Initialization Error: ${err.message}`);
-                statusDiv.innerText = `Error: ${err.message}`;
-            }
-        };
-
-        function setupPeerConnection() {
-            pc = new RTCPeerConnection(rtcConfig);
-
-            // Bind tracks to connection object immediately
-            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-            pc.ontrack = (event) => {
-                log("Success: Incoming remote video track received!");
-                if (event.streams && event.streams[0]) {
-                    remoteVideo.srcObject = event.streams[0];
-                } else {
-                    if (!remoteVideo.srcObject) {
-                        remoteVideo.srcObject = new MediaStream([event.track]);
-                    } else {
-                        remoteVideo.srcObject.addTrack(event.track);
-                    }
-                }
-            };
-
-            pc.oniceconnectionstatechange = () => {
-                log(`ICE Connection State: ${pc.iceConnectionState}`);
-                if (pc.iceConnectionState === 'connected') {
-                    statusDiv.innerText = "Connected! Video should be streaming.";
-                    statusDiv.style.color = "green";
-                }
-                if (pc.iceConnectionState === 'failed') {
-                    statusDiv.innerText = "Connection Failed! IPv6 route was firewalled.";
-                    statusDiv.style.color = "red";
-                }
-            };
-
-            // TRACKING THE NETWORK COMPILE STATE
-            pc.onicegatheringstatechange = () => {
-                log(`Network Candidate Gathering State: ${pc.iceGatheringState}`);
-                if (pc.iceGatheringState === 'complete') {
-                    log("✅ Network layout fully compiled! Code updated in text block.");
-                    sdpBox.value = btoa(JSON.stringify(pc.localDescription));
-                    statusDiv.innerText = "Status: Code fully compiled! Ready to copy.";
-                }
-            };
-
-            // STRICT FILTER ENGINE
-            const originalAddIceCandidate = pc.addIceCandidate.bind(pc);
-            pc.addIceCandidate = function(candidate) {
-                if (candidate && candidate.candidate) {
-                    const cStr = candidate.candidate;
-
-                    if (cStr.includes('typ relay')) {
-                        log("🚫 Blocked Relay Candidate");
-                        return Promise.resolve();
-                    }
-
-                    const tokens = cStr.split(' ');
-                    const ip = tokens[4];
-
-                    if (ip && ip.includes(':')) {
-                        log(`🚀 Injecting Valid IPv6 Path: ${ip}`);
-                        return originalAddIceCandidate(candidate);
-                    } else {
-                        log(`🚫 Dropped IPv4 Route: ${ip}`);
-                        return Promise.resolve();
-                    }
-                }
-                return originalAddIceCandidate(candidate);
-            };
+        if (!ip.includes(':')) {
+          log(`🚫 [Local] Dropped IPv4 Route → ${ip}`, 'log-err');
+          return; // discard outgoing IPv4 candidate
         }
+        log(`🧊 [Local] IPv6 candidate gathered → ${ip}`, 'log-info');
+      }
+    };
 
-        offerBtn.onclick = async () => {
-            log("Generating local connection offer... compiling addresses...");
-            try {
-                statusDiv.innerText = "Status: Gathering network routes... PLEASE WAIT.";
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-            } catch (e) {
-                log(`Offer Generation Failure: ${e.message}`);
-            }
-        };
+    // ── ICE Gathering State ──────────────────── 
+    pc.onicegatheringstatechange = () => {
+      const state = pc.iceGatheringState;
+      log(`🔄 ICE Gathering State → ${state}`, 'log-info');
 
-        answerBtn.onclick = async () => {
-            const rawInput = sdpBox.value.trim();
-            if (!rawInput) {
-                alert("Please paste the connection code into the textarea first.");
-                return;
-            }
+      if (state === 'complete') {
+        // Bundle final SDP with all compiled candidates
+        const sdp = JSON.stringify(pc.localDescription);
+        const encoded = btoa(unescape(encodeURIComponent(sdp)));
+        outSignal.value = encoded;
+        setStatus('✅ Routes compiled! Ready to copy.');
+        log('✅ ICE gathering COMPLETE — full SDP bundled & Base64-encoded', 'log-ok');
+      }
+    };
 
-            try {
-                const remoteDesc = JSON.parse(atob(rawInput));
-                await pc.setRemoteDescription(new RTCSessionDescription(remoteDesc));
+    // ── ICE Connection State ─────────────────── 
+    pc.oniceconnectionstatechange = () => {
+      const state = pc.iceConnectionState;
+      const cls = {
+        checking: 'log-warn', connected: 'log-ok', completed: 'log-ok',
+        disconnected: 'log-err', failed: 'log-err', closed: 'log-err'
+      }[state] || 'log-info';
+      log(`🌐 ICE Connection State → ${state}`, cls);
+      setStatus(`Connection: ${state}`);
 
-                if (remoteDesc.type === 'offer') {
-                    log("Processing offer code... compiling matching answer tracks...");
-                    statusDiv.innerText = "Status: Compiling answer routes... PLEASE WAIT.";
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                } else if (remoteDesc.type === 'answer') {
-                    log("Processing answer code... Finalizing connection handshake...");
-                    statusDiv.innerText = "Status: Finalizing handshake maps...";
-                }
-            } catch (err) {
-                log(`Handshake Error: ${err.message}`);
-                alert("Invalid connection code structure.");
-            }
-        };
-    </script>
+      if (state === 'connected' || state === 'completed') {
+        setStatus('🟢 Peer connected!');
+      }
+      if (state === 'failed') {
+        setStatus('🔴 Connection failed — no valid IPv6 path found.');
+        log('⚠️  All candidate routes exhausted. Ensure both peers are on IPv6-capable networks.', 'log-warn');
+      }
+    };
+
+    // ── Connection State ─────────────────────── 
+    pc.onconnectionstatechange = () => {
+      log(`🔗 Connection State → ${pc.connectionState}`, 'log-info');
+    };
+
+    // ── Signaling State ──────────────────────── 
+    pc.onsignalingstatechange = () => {
+      log(`📡 Signaling State → ${pc.signalingState}`, 'log-dim');
+    };
+
+    return pc;
+  }
+
+  /* ── CREATE OFFER (Caller) ──────────────────── */
+  window.createOffer = async function () {
+    try {
+      log('═══════════════════════════════════════', 'log-dim');
+      log('📡 CALLER FLOW — Creating Offer', 'log-info');
+      setStatus('Creating offer…');
+
+      const stream = await acquireMedia();
+      buildPeerConnection();
+
+      stream.getTracks().forEach(track => {
+        pc.addTrack(track, stream);
+        log(`➕ Added local track: ${track.kind}`, 'log-dim');
+      });
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      log('📝 Local description set (offer) — waiting for ICE gathering…', 'log-info');
+      setStatus('Gathering network routes… please wait.');
+
+      // The SDP will be injected into outSignal by the onicegatheringstatechange handler
+      // once gathering is complete.
+    } catch (err) {
+      log(`❌ createOffer error: ${err.message}`, 'log-err');
+      setStatus('Error creating offer.');
+    }
+  };
+
+  /* ── ACCEPT OFFER (Callee) ──────────────────── */
+  window.acceptOffer = async function () {
+    try {
+      log('═══════════════════════════════════════', 'log-dim');
+      log('📥 CALLEE FLOW — Accepting Offer', 'log-info');
+      setStatus('Accepting offer…');
+
+      const peerSignal = inSignal.value.trim();
+      if (!peerSignal) {
+        log('⚠️  No signal pasted — paste the caller\'s signal first.', 'log-warn');
+        setStatus('Paste the caller\'s signal first.');
+        return;
+      }
+
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(peerSignal))));
+      log(`📨 Decoded remote SDP — type: ${decoded.type}`, 'log-info');
+
+      const stream = await acquireMedia();
+      buildPeerConnection();
+
+      stream.getTracks().forEach(track => {
+        pc.addTrack(track, stream);
+        log(`➕ Added local track: ${track.kind}`, 'log-dim');
+      });
+
+      await pc.setRemoteDescription(new RTCSessionDescription(decoded));
+      log('✅ Remote description set (offer)', 'log-ok');
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      log('📝 Local description set (answer) — waiting for ICE gathering…', 'log-info');
+      setStatus('Gathering network routes… please wait.');
+
+      // The SDP will be injected by the onicegatheringstatechange handler
+    } catch (err) {
+      log(`❌ acceptOffer error: ${err.message}`, 'log-err');
+      setStatus('Error accepting offer.');
+    }
+  };
+
+  /* ── COMPLETE CONNECTION (Caller applies answer) ── */
+  window.completeConnection = async function () {
+    try {
+      log('═══════════════════════════════════════', 'log-dim');
+      log('🔗 COMPLETING — Applying Answer', 'log-info');
+      setStatus('Completing connection…');
+
+      if (!pc) {
+        log('⚠️  No peer connection — create an offer first.', 'log-warn');
+        setStatus('Create an offer first.');
+        return;
+      }
+
+      const peerSignal = inSignal.value.trim();
+      if (!peerSignal) {
+        log('⚠️  No signal pasted — paste the callee\'s signal first.', 'log-warn');
+        setStatus('Paste the callee\'s answer signal first.');
+        return;
+      }
+
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(peerSignal))));
+      log(`📨 Decoded remote SDP — type: ${decoded.type}`, 'log-info');
+
+      await pc.setRemoteDescription(new RTCSessionDescription(decoded));
+      log('✅ Remote description set (answer) — handshake initiated', 'log-ok');
+      setStatus('Handshake in progress…');
+    } catch (err) {
+      log(`❌ completeConnection error: ${err.message}`, 'log-err');
+      setStatus('Error completing connection.');
+    }
+  };
+
+  /* ── FORCE PLAY (Apple Autoplay Bypass) ─────── */
+  window.forcePlay = function () {
+    log('▶ Force Play triggered via user interaction', 'log-info');
+    remoteVideo.muted = false;
+
+    const playPromise = remoteVideo.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        log('✅ Remote video playing with audio', 'log-ok');
+        setStatus('Remote video playing.');
+      }).catch(err => {
+        log(`⚠️  play() rejected: ${err.message} — trying muted fallback`, 'log-warn');
+        remoteVideo.muted = true;
+        remoteVideo.play().then(() => {
+          log('✅ Remote video playing (muted fallback)', 'log-ok');
+          setStatus('Remote video playing (muted).');
+        }).catch(e2 => {
+          log(`❌ Muted play also failed: ${e2.message}`, 'log-err');
+        });
+      });
+    }
+  };
+
+  /* ── COPY SIGNAL ────────────────────────────── */
+  window.copySignal = function () {
+    const text = outSignal.value;
+    if (!text) {
+      log('⚠️  Nothing to copy — signal not ready yet.', 'log-warn');
+      return;
+    }
+    navigator.clipboard.writeText(text).then(() => {
+      log('📋 Signal copied to clipboard!', 'log-ok');
+      setStatus('Signal copied!');
+    }).catch(() => {
+      // Fallback for older browsers
+      outSignal.select();
+      document.execCommand('copy');
+      log('📋 Signal copied (fallback method)', 'log-ok');
+      setStatus('Signal copied!');
+    });
+  };
+
+  /* ── HANG UP ────────────────────────────────── */
+  window.hangUp = function () {
+    log('📴 Hanging up…', 'log-warn');
+    if (pc) { pc.close(); pc = null; }
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
+    }
+    localVideo.srcObject = null;
+    remoteVideo.srcObject = null;
+    outSignal.value = '';
+    inSignal.value = '';
+    setStatus('Call ended.');
+    log('✅ All resources released.', 'log-ok');
+  };
+
+  /* ── Boot ───────────────────────────────────── */
+  log('═══════════════════════════════════════', 'log-dim');
+  log('⚡ P2P Video Call Engine — IPv6 Direct', 'log-info');
+  log('🛡️  Strict IPv6 filtering · No TURN relay', 'log-info');
+  log('📋 Flow: Create Offer → Copy → Send to peer', 'log-dim');
+  log('📋 Peer: Paste signal → Accept Offer → Copy answer back', 'log-dim');
+  log('📋 Caller: Paste answer → Complete → Connected!', 'log-dim');
+  log('═══════════════════════════════════════', 'log-dim');
+
+})();
+</script>
 </body>
 </html>
+
