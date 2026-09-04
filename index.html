@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strict IPv6 P2P Video Call</title>
+    <title>Strict IPv6 P2P Video Call 2</title>
     <!-- Include PeerJS Library via CDN -->
     <script src="https://unpkg.com"></script>
     <style>
@@ -23,11 +23,11 @@
     <p>Testing true serverless P2P over cellular networks</p>
 
     <div class="controls">
-        <div><strong>Your Peer ID:</strong> <span id="my-id" style="color:#007bff;">Loading...</span></div>
+        <div><strong>Your Peer ID:</strong> <span id="my-id" style="color:#007bff;">Generating...</span></div>
         <br>
         <input type="text" id="remote-id" placeholder="Paste Remote Peer ID here">
         <button id="call-btn">Start IPv6 Video Call</button>
-        <div id="status">Status: Waiting for media permissions...</div>
+        <div id="status">Status: Initializing connection...</div>
     </div>
 
     <div class="video-container">
@@ -49,51 +49,61 @@
         const remoteIdInput = document.getElementById('remote-id');
         const callBtn = document.getElementById('call-btn');
 
-        let localStream;
-        let peer;
+        let localStream = null;
+        let peer = null;
 
         // Configuration forcing Google's dual-stack STUN servers
         const strictIPv6Config = {
             config: {
                 iceServers: [
-                    { urls: 'stun:://google.com' },
-                    { urls: 'stun:://google.com' }
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
                 ],
                 iceTransportPolicy: 'all'
             }
         };
 
-        // 1. Get Camera/Mic access first
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
-                localStream = stream;
-                localVideo.srcObject = stream;
-                statusDiv.innerText = "Status: Camera ready. Connecting to signaling broker...";
-                initPeer();
-            })
-            .catch(err => {
-                statusDiv.innerText = "Error: Camera access denied. " + err.message;
-            });
-
-        // 2. Initialize PeerJS with explicit configurations
+        // FIX 1: Initialize PeerJS immediately so 'peer' is NEVER undefined
         function initPeer() {
             peer = new Peer(strictIPv6Config);
 
             peer.on('open', (id) => {
                 myIdSpan.innerText = id;
-                statusDiv.innerText = "Status: Online. Ready to connect via IPv6.";
+                statusDiv.innerText = "Status: Online! Requesting camera permissions...";
+                requestCamera();
+            });
+
+            peer.on('error', (err) => {
+                console.error("PeerJS Error:", err);
+                statusDiv.innerText = `PeerJS Error: ${err.type}`;
             });
 
             // Handle Incoming Call
             peer.on('call', (incomingCall) => {
-                statusDiv.innerText = "Status: Incoming call! Intercepting networking layers...";
-                
-                // Enforce IPv6 filters on the underlying connection
+                statusDiv.innerText = "Status: Incoming call! Stripping IPv4 metrics...";
                 enforceIPv6Only(incomingCall.peerConnection);
 
+                if (!localStream) {
+                    statusDiv.innerText = "Error: Cannot answer. Camera stream not ready.";
+                    return;
+                }
+                
                 incomingCall.answer(localStream);
                 setupStreamHandlers(incomingCall);
             });
+        }
+
+        // FIX 2: Decoupled camera request system
+        async function requestCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localStream = stream;
+                localVideo.srcObject = stream;
+                statusDiv.innerText = "Status: Ready! Share your ID to start IPv6 P2P call.";
+            } catch (err) {
+                console.error("Camera Error:", err);
+                statusDiv.innerHTML = `<span style='color:orange;'>Camera Warning: ${err.message}. (Please accept browser permission prompts)</span>`;
+            }
         }
 
         // 3. Initiate Outbound Call
@@ -103,13 +113,15 @@
                 alert("Please enter a valid Remote Peer ID");
                 return;
             }
+            if (!localStream) {
+                alert("Please allow camera access before placing a call.");
+                return;
+            }
 
             statusDiv.innerText = "Status: Dialing peer and punching IPv6 firewalls...";
             const outboundCall = peer.call(targetId, localStream);
             
-            // Enforce IPv6 filters on the outbound connection
             enforceIPv6Only(outboundCall.peerConnection);
-            
             setupStreamHandlers(outboundCall);
         };
 
@@ -129,7 +141,6 @@
         function enforceIPv6Only(rtcPeerConnection) {
             if (!rtcPeerConnection) return;
 
-            // Monitor the connection state
             rtcPeerConnection.oniceconnectionstatechange = () => {
                 console.log("ICE Connection State changed:", rtcPeerConnection.iceConnectionState);
                 statusDiv.innerText = `ICE State: ${rtcPeerConnection.iceConnectionState}`;
@@ -139,27 +150,23 @@
                 }
             };
 
-            // Intercept candidate generation and aggressively filter out IPv4 routes
             const originalAddIceCandidate = rtcPeerConnection.addIceCandidate.bind(rtcPeerConnection);
             
             rtcPeerConnection.addIceCandidate = function(candidate) {
                 if (candidate && candidate.candidate) {
                     const cStr = candidate.candidate;
 
-                    // 1. If it explicitly states it is a relay (TURN), drop it.
                     if (cStr.includes('typ relay')) {
                         console.log("⚠️ Blocked Relay Candidate:", cStr);
                         return Promise.resolve(); 
                     }
 
-                    // 2. Identify and block traditional IPv4 addresses (patterns like 192.168.x.x, 10.x.x.x or public IPv4 standard dots)
-                    // IPv6 addresses natively contain colons (:). If it lacks a colon in the ip field, it's IPv4.
                     const tokens = cStr.split(' ');
-                    const ipAddress = tokens[4]; // The 5th item in standard ICE candidate string structure is the IP
+                    const ipAddress = tokens[4]; // Extract structural IP value from ICE metric
                     
                     if (ipAddress && !ipAddress.includes(':')) {
                         console.log("⚠️ Dropped IPv4 Candidate:", ipAddress);
-                        return Promise.resolve(); // Ignore IPv4 silently to force IPv6 routes
+                        return Promise.resolve(); 
                     }
                     
                     console.log("✅ Allowed IPv6 Candidate:", ipAddress);
@@ -167,6 +174,9 @@
                 return originalAddIceCandidate(candidate);
             };
         }
+
+        // Start execution instantly on page load
+        initPeer();
     </script>
 </body>
 </html>
