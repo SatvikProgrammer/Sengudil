@@ -12,7 +12,6 @@
     --surface: #131a2a;
     --border: #1e2d4a;
     --accent: #00e5ff;
-    --accent-dim: #00e5ff33;
     --danger: #ff4060;
     --success: #00e676;
     --warn: #ffab00;
@@ -29,32 +28,31 @@
     overflow-x: hidden;
   }
 
-  /* ── Header ────────────────────────────────────── */
   header {
     text-align: center;
-    padding: 16px 12px 8px;
+    padding: 16px 12px 4px;
   }
   header h1 {
     font-size: 1.25rem;
     font-weight: 700;
-    letter-spacing: .5px;
     background: linear-gradient(135deg, var(--accent), #7c4dff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
   #status-bar {
     margin-top: 6px;
-    font-size: .78rem;
+    font-size: .8rem;
     color: var(--text-dim);
-    min-height: 1.2em;
+    min-height: 1.4em;
   }
 
-  /* ── Video Grid ────────────────────────────────── */
   .video-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     padding: 8px 12px;
+    max-width: 600px;
+    margin: 0 auto;
   }
   .video-cell {
     position: relative;
@@ -65,84 +63,40 @@
     aspect-ratio: 3/4;
   }
   .video-cell video {
-    width: 100%;
-    height: 100%;
+    width: 100%; height: 100%;
     object-fit: cover;
     display: block;
     background: #000;
   }
   .video-label {
     position: absolute;
-    bottom: 6px;
-    left: 8px;
-    font-size: .65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    bottom: 6px; left: 8px;
+    font-size: .65rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
     color: var(--accent);
     background: #0009;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 2px 8px; border-radius: 4px;
   }
 
-  /* ── Controls ──────────────────────────────────── */
   .controls {
     padding: 8px 12px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    display: flex; gap: 8px;
     justify-content: center;
+    max-width: 600px; margin: 0 auto;
   }
   .btn {
-    border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: .8rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity .15s, transform .1s;
-    color: #fff;
+    border: none; border-radius: 8px;
+    padding: 12px 20px; font-size: .82rem; font-weight: 600;
+    cursor: pointer; color: #fff;
+    transition: transform .1s;
   }
   .btn:active { transform: scale(.96); }
-  .btn:disabled { opacity: .35; cursor: not-allowed; }
-  .btn-primary { background: linear-gradient(135deg, #0091ea, #00b8d4); }
-  .btn-green   { background: linear-gradient(135deg, #00c853, #00e676); color: #0a0e17; }
-  .btn-orange  { background: linear-gradient(135deg, #ff6d00, #ffab00); color: #0a0e17; }
-  .btn-purple  { background: linear-gradient(135deg, #7c4dff, #b388ff); }
-  .btn-danger  { background: linear-gradient(135deg, #d50000, #ff1744); }
+  .btn-orange { background: linear-gradient(135deg, #ff6d00, #ffab00); color: #0a0e17; }
+  .btn-danger { background: linear-gradient(135deg, #d50000, #ff1744); }
 
-  /* ── Signaling Area ────────────────────────────── */
-  .signal-section {
-    padding: 6px 12px;
-  }
-  .signal-section label {
-    display: block;
-    font-size: .72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .8px;
-    color: var(--text-dim);
-    margin-bottom: 4px;
-  }
-  textarea {
-    width: 100%;
-    min-height: 64px;
-    background: var(--surface);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 10px;
-    font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
-    font-size: .72rem;
-    resize: vertical;
-    outline: none;
-    transition: border-color .2s;
-  }
-  textarea:focus { border-color: var(--accent); }
-
-  /* ── Log Box ───────────────────────────────────── */
   #log-box {
-    margin: 8px 12px 20px;
+    margin: 8px auto 20px;
+    max-width: 600px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -150,83 +104,66 @@
     overflow-y: auto;
     padding: 8px 10px;
     font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
-    font-size: .68rem;
-    line-height: 1.55;
+    font-size: .68rem; line-height: 1.55;
     -webkit-overflow-scrolling: touch;
   }
   #log-box .log-line { white-space: pre-wrap; word-break: break-all; }
-  .log-info  { color: var(--accent); }
-  .log-ok    { color: var(--success); }
-  .log-warn  { color: var(--warn); }
-  .log-err   { color: var(--danger); }
-  .log-dim   { color: var(--text-dim); }
-
-  /* ── Responsive ────────────────────────────────── */
-  @media (min-width: 640px) {
-    .video-grid { max-width: 600px; margin: 0 auto; }
-    .controls   { max-width: 600px; margin: 0 auto; }
-    .signal-section { max-width: 600px; margin: 0 auto; }
-    #log-box    { max-width: 600px; margin: 8px auto 20px; }
-  }
+  .log-info { color: var(--accent); }
+  .log-ok   { color: var(--success); }
+  .log-warn { color: var(--warn); }
+  .log-err  { color: var(--danger); }
+  .log-dim  { color: var(--text-dim); }
 </style>
 </head>
 <body>
 
-<!-- ═══════ UI ═══════ -->
 <header>
-  <h1>⚡ P2P Video Call — IPv6 Direct</h1>
-  <div id="status-bar">Awaiting action…</div>
+  <h1>⚡ P2P Video Call</h1>
+  <div id="status-bar">Starting…</div>
 </header>
 
 <div class="video-grid">
   <div class="video-cell">
     <video id="localVideo" autoplay playsinline muted></video>
-    <span class="video-label">Local</span>
+    <span class="video-label">You</span>
   </div>
   <div class="video-cell">
     <video id="remoteVideo" autoplay playsinline muted></video>
-    <span class="video-label">Remote</span>
+    <span class="video-label">Peer</span>
   </div>
 </div>
 
 <div class="controls">
-  <button class="btn btn-primary" id="btnCreate"    onclick="createOffer()">📡 Create Offer</button>
-  <button class="btn btn-green"   id="btnAccept"    onclick="acceptOffer()">📥 Accept Offer</button>
-  <button class="btn btn-purple"  id="btnComplete"  onclick="completeConnection()">🔗 Complete</button>
-  <button class="btn btn-orange"  id="btnForcePlay" onclick="forcePlay()">▶ Force Play Video</button>
-  <button class="btn btn-danger"  id="btnHangup"    onclick="hangUp()">✖ Hang Up</button>
+  <button class="btn btn-orange" onclick="forcePlay()">▶ Force Play Video</button>
+  <button class="btn btn-danger" onclick="hangUp()">✖ Hang Up</button>
 </div>
 
-<!-- Outgoing signal -->
-<div class="signal-section">
-  <label>Your Signal (copy &amp; send to peer)</label>
-  <textarea id="outSignal" readonly placeholder="Signal will appear here after ICE gathering completes…"></textarea>
-  <button class="btn btn-primary" style="margin-top:4px;width:100%" onclick="copySignal()">📋 Copy Signal</button>
-</div>
-
-<!-- Incoming signal -->
-<div class="signal-section">
-  <label>Peer's Signal (paste here)</label>
-  <textarea id="inSignal" placeholder="Paste the other person's signal here…"></textarea>
-</div>
-
-<!-- Live Console -->
 <div id="log-box"></div>
 
-<!-- ═══════ ENGINE ═══════ -->
-<script>
-(function () {
-  'use strict';
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, deleteDoc, getDocs, updateDoc }
+    from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
 
-  /* ── DOM Refs ───────────────────────────────── */
+  const app = initializeApp({
+    apiKey: "AIzaSyAuqH_up7SYlVO_lY-qpBJgq3I1w9k8GKc",
+    authDomain: "sengudil.firebaseapp.com",
+    projectId: "sengudil",
+    storageBucket: "sengudil.firebasestorage.app",
+    messagingSenderId: "447848722727",
+    appId: "1:447848722727:web:eb54015cccc519db8bf902"
+  });
+  const db = getFirestore(app);
+
+  const ROOM_ID   = 'call';
+  const roomRef   = doc(db, 'rooms', ROOM_ID);
   const localVideo  = document.getElementById('localVideo');
   const remoteVideo = document.getElementById('remoteVideo');
-  const outSignal   = document.getElementById('outSignal');
-  const inSignal    = document.getElementById('inSignal');
-  const statusBar   = document.getElementById('status-bar');
   const logBox      = document.getElementById('log-box');
+  const statusBar   = document.getElementById('status-bar');
 
-  /* ── Logging Engine ─────────────────────────── */
+  let pc = null, localStream = null, unsubscribers = [];
+
   function log(msg, cls = 'log-dim') {
     const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
     const el = document.createElement('div');
@@ -235,10 +172,8 @@
     logBox.appendChild(el);
     logBox.scrollTop = logBox.scrollHeight;
   }
-
   function setStatus(msg) { statusBar.textContent = msg; }
 
-  /* ── RTC Configuration ─────────────────────── */
   const rtcConfig = {
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },
@@ -247,322 +182,206 @@
     iceTransportPolicy: 'all'
   };
 
-  let pc = null;
-  let localStream = null;
-
-  /* ── IPv6 Candidate Auditor ─────────────────── */
-  function installIPv6Filter(peerConnection) {
-    const originalAddIceCandidate = peerConnection.addIceCandidate.bind(peerConnection);
-
-    peerConnection.addIceCandidate = function (candidate) {
-      // Allow end-of-candidates sentinel
-      if (!candidate || !candidate.candidate || candidate.candidate === '') {
-        log('ℹ️  End-of-candidates sentinel received', 'log-dim');
-        return originalAddIceCandidate(candidate);
-      }
-
-      const raw = candidate.candidate;
-
-      // 1. Block TURN relay candidates
-      if (raw.includes('typ relay')) {
-        log(`🚫 Blocked Relay → ${raw.substring(0, 80)}…`, 'log-err');
-        return Promise.resolve();
-      }
-
-      // 2. Extract the IP component (field index 4 in SDP candidate line)
-      const parts = raw.split(' ');
-      const ip = parts.length > 4 ? parts[4] : '';
-
-      // 3. IPv6 addresses contain colons; IPv4 do not
-      if (!ip.includes(':')) {
-        log(`🚫 Dropped IPv4 Route → ${ip}`, 'log-err');
-        return Promise.resolve();
-      }
-
-      // 4. Valid IPv6 — allow injection
-      log(`🚀 Injecting Valid IPv6 Path → ${ip}`, 'log-ok');
-      return originalAddIceCandidate(candidate);
+  /* ── IPv6 Filter ────────────────────────────── */
+  function installIPv6Filter(conn) {
+    const orig = conn.addIceCandidate.bind(conn);
+    conn.addIceCandidate = function (c) {
+      if (!c || !c.candidate || c.candidate === '') return orig(c);
+      const raw = c.candidate;
+      if (raw.includes('typ relay')) { log(`🚫 Blocked Relay`, 'log-err'); return Promise.resolve(); }
+      const ip = raw.split(' ')[4] || '';
+      if (!ip.includes(':')) { log(`🚫 Dropped IPv4 → ${ip}`, 'log-err'); return Promise.resolve(); }
+      log(`🚀 Injecting IPv6 → ${ip}`, 'log-ok');
+      return orig(c);
     };
-
-    log('🛡️  IPv6 Recovery Engine installed — filtering active', 'log-info');
+    log('🛡️  IPv6 filter active', 'log-info');
   }
 
-  /* ── Media Acquisition ──────────────────────── */
+  /* ── Media ──────────────────────────────────── */
   async function acquireMedia() {
     if (localStream) return localStream;
-    setStatus('Requesting camera & microphone…');
-    log('📸 Requesting getUserMedia…', 'log-info');
-
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-        audio: true
-      });
-      localVideo.srcObject = localStream;
-      log(`✅ Local media acquired — ${localStream.getTracks().length} tracks`, 'log-ok');
-      setStatus('Camera ready.');
-      return localStream;
-    } catch (err) {
-      log(`❌ Media error: ${err.message}`, 'log-err');
-      setStatus('Media access denied.');
-      throw err;
-    }
+    log('📸 Requesting camera & mic…', 'log-info');
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: true
+    });
+    localVideo.srcObject = localStream;
+    log(`✅ Local media ready`, 'log-ok');
+    return localStream;
   }
 
-  /* ── Peer Connection Factory ────────────────── */
-  function buildPeerConnection() {
+  /* ── Build Peer Connection ──────────────────── */
+  function buildPC(candidateCollection) {
     if (pc) { pc.close(); pc = null; }
-
     pc = new RTCPeerConnection(rtcConfig);
-    log('🔧 RTCPeerConnection created', 'log-info');
-
-    // Install the IPv6-only filter
     installIPv6Filter(pc);
 
-    // Remote track handler
-    pc.ontrack = (event) => {
-      log(`📺 Remote track received: ${event.track.kind}`, 'log-ok');
-      if (remoteVideo.srcObject !== event.streams[0]) {
-        remoteVideo.srcObject = event.streams[0];
-        log('📺 Remote video stream attached', 'log-ok');
+    pc.ontrack = (e) => {
+      if (remoteVideo.srcObject !== e.streams[0]) {
+        remoteVideo.srcObject = e.streams[0];
+        log('📺 Remote stream attached', 'log-ok');
       }
     };
 
-    // ICE candidate handler (outgoing — also filtered for local gathering)
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        const raw = event.candidate.candidate;
-        const parts = raw.split(' ');
-        const ip = parts.length > 4 ? parts[4] : '';
-
-        if (raw.includes('typ relay')) {
-          log(`🚫 [Local] Blocked Relay → ${raw.substring(0, 70)}…`, 'log-err');
-          return; // discard outgoing relay candidate
-        }
-        if (!ip.includes(':')) {
-          log(`🚫 [Local] Dropped IPv4 Route → ${ip}`, 'log-err');
-          return; // discard outgoing IPv4 candidate
-        }
-        log(`🧊 [Local] IPv6 candidate gathered → ${ip}`, 'log-info');
-      }
+    const candCol = collection(roomRef, candidateCollection);
+    pc.onicecandidate = (e) => {
+      if (!e.candidate) return;
+      const raw = e.candidate.candidate, ip = raw.split(' ')[4] || '';
+      if (raw.includes('typ relay')) { log(`🚫 [Local] Blocked Relay`, 'log-err'); return; }
+      if (!ip.includes(':')) { log(`🚫 [Local] Dropped IPv4 → ${ip}`, 'log-err'); return; }
+      log(`🧊 [Local] IPv6 → ${ip}`, 'log-info');
+      addDoc(candCol, e.candidate.toJSON());
     };
 
-    // ── ICE Gathering State ──────────────────── 
-    pc.onicegatheringstatechange = () => {
-      const state = pc.iceGatheringState;
-      log(`🔄 ICE Gathering State → ${state}`, 'log-info');
-
-      if (state === 'complete') {
-        // Bundle final SDP with all compiled candidates
-        const sdp = JSON.stringify(pc.localDescription);
-        const encoded = btoa(unescape(encodeURIComponent(sdp)));
-        outSignal.value = encoded;
-        setStatus('✅ Routes compiled! Ready to copy.');
-        log('✅ ICE gathering COMPLETE — full SDP bundled & Base64-encoded', 'log-ok');
-      }
-    };
-
-    // ── ICE Connection State ─────────────────── 
+    pc.onicegatheringstatechange = () => log(`🔄 Gathering → ${pc.iceGatheringState}`, 'log-info');
     pc.oniceconnectionstatechange = () => {
-      const state = pc.iceConnectionState;
-      const cls = {
-        checking: 'log-warn', connected: 'log-ok', completed: 'log-ok',
-        disconnected: 'log-err', failed: 'log-err', closed: 'log-err'
-      }[state] || 'log-info';
-      log(`🌐 ICE Connection State → ${state}`, cls);
-      setStatus(`Connection: ${state}`);
-
-      if (state === 'connected' || state === 'completed') {
-        setStatus('🟢 Peer connected!');
-      }
-      if (state === 'failed') {
-        setStatus('🔴 Connection failed — no valid IPv6 path found.');
-        log('⚠️  All candidate routes exhausted. Ensure both peers are on IPv6-capable networks.', 'log-warn');
-      }
+      const s = pc.iceConnectionState;
+      const cls = { checking:'log-warn', connected:'log-ok', completed:'log-ok',
+                    disconnected:'log-err', failed:'log-err', closed:'log-err' }[s] || 'log-info';
+      log(`🌐 ICE → ${s}`, cls);
+      if (s === 'connected' || s === 'completed') setStatus('🟢 Connected!');
+      if (s === 'failed') setStatus('🔴 Failed — no IPv6 path found');
     };
-
-    // ── Connection State ─────────────────────── 
-    pc.onconnectionstatechange = () => {
-      log(`🔗 Connection State → ${pc.connectionState}`, 'log-info');
-    };
-
-    // ── Signaling State ──────────────────────── 
-    pc.onsignalingstatechange = () => {
-      log(`📡 Signaling State → ${pc.signalingState}`, 'log-dim');
-    };
+    pc.onconnectionstatechange = () => log(`🔗 Connection → ${pc.connectionState}`, 'log-info');
 
     return pc;
   }
 
-  /* ── CREATE OFFER (Caller) ──────────────────── */
-  window.createOffer = async function () {
-    try {
-      log('═══════════════════════════════════════', 'log-dim');
-      log('📡 CALLER FLOW — Creating Offer', 'log-info');
-      setStatus('Creating offer…');
-
-      const stream = await acquireMedia();
-      buildPeerConnection();
-
-      stream.getTracks().forEach(track => {
-        pc.addTrack(track, stream);
-        log(`➕ Added local track: ${track.kind}`, 'log-dim');
-      });
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      log('📝 Local description set (offer) — waiting for ICE gathering…', 'log-info');
-      setStatus('Gathering network routes… please wait.');
-
-      // The SDP will be injected into outSignal by the onicegatheringstatechange handler
-      // once gathering is complete.
-    } catch (err) {
-      log(`❌ createOffer error: ${err.message}`, 'log-err');
-      setStatus('Error creating offer.');
-    }
-  };
-
-  /* ── ACCEPT OFFER (Callee) ──────────────────── */
-  window.acceptOffer = async function () {
-    try {
-      log('═══════════════════════════════════════', 'log-dim');
-      log('📥 CALLEE FLOW — Accepting Offer', 'log-info');
-      setStatus('Accepting offer…');
-
-      const peerSignal = inSignal.value.trim();
-      if (!peerSignal) {
-        log('⚠️  No signal pasted — paste the caller\'s signal first.', 'log-warn');
-        setStatus('Paste the caller\'s signal first.');
-        return;
-      }
-
-      const decoded = JSON.parse(decodeURIComponent(escape(atob(peerSignal))));
-      log(`📨 Decoded remote SDP — type: ${decoded.type}`, 'log-info');
-
-      const stream = await acquireMedia();
-      buildPeerConnection();
-
-      stream.getTracks().forEach(track => {
-        pc.addTrack(track, stream);
-        log(`➕ Added local track: ${track.kind}`, 'log-dim');
-      });
-
-      await pc.setRemoteDescription(new RTCSessionDescription(decoded));
-      log('✅ Remote description set (offer)', 'log-ok');
-
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      log('📝 Local description set (answer) — waiting for ICE gathering…', 'log-info');
-      setStatus('Gathering network routes… please wait.');
-
-      // The SDP will be injected by the onicegatheringstatechange handler
-    } catch (err) {
-      log(`❌ acceptOffer error: ${err.message}`, 'log-err');
-      setStatus('Error accepting offer.');
-    }
-  };
-
-  /* ── COMPLETE CONNECTION (Caller applies answer) ── */
-  window.completeConnection = async function () {
-    try {
-      log('═══════════════════════════════════════', 'log-dim');
-      log('🔗 COMPLETING — Applying Answer', 'log-info');
-      setStatus('Completing connection…');
-
-      if (!pc) {
-        log('⚠️  No peer connection — create an offer first.', 'log-warn');
-        setStatus('Create an offer first.');
-        return;
-      }
-
-      const peerSignal = inSignal.value.trim();
-      if (!peerSignal) {
-        log('⚠️  No signal pasted — paste the callee\'s signal first.', 'log-warn');
-        setStatus('Paste the callee\'s answer signal first.');
-        return;
-      }
-
-      const decoded = JSON.parse(decodeURIComponent(escape(atob(peerSignal))));
-      log(`📨 Decoded remote SDP — type: ${decoded.type}`, 'log-info');
-
-      await pc.setRemoteDescription(new RTCSessionDescription(decoded));
-      log('✅ Remote description set (answer) — handshake initiated', 'log-ok');
-      setStatus('Handshake in progress…');
-    } catch (err) {
-      log(`❌ completeConnection error: ${err.message}`, 'log-err');
-      setStatus('Error completing connection.');
-    }
-  };
-
-  /* ── FORCE PLAY (Apple Autoplay Bypass) ─────── */
-  window.forcePlay = function () {
-    log('▶ Force Play triggered via user interaction', 'log-info');
-    remoteVideo.muted = false;
-
-    const playPromise = remoteVideo.play();
-    if (playPromise !== undefined) {
-      playPromise.then(() => {
-        log('✅ Remote video playing with audio', 'log-ok');
-        setStatus('Remote video playing.');
-      }).catch(err => {
-        log(`⚠️  play() rejected: ${err.message} — trying muted fallback`, 'log-warn');
-        remoteVideo.muted = true;
-        remoteVideo.play().then(() => {
-          log('✅ Remote video playing (muted fallback)', 'log-ok');
-          setStatus('Remote video playing (muted).');
-        }).catch(e2 => {
-          log(`❌ Muted play also failed: ${e2.message}`, 'log-err');
-        });
-      });
-    }
-  };
-
-  /* ── COPY SIGNAL ────────────────────────────── */
-  window.copySignal = function () {
-    const text = outSignal.value;
-    if (!text) {
-      log('⚠️  Nothing to copy — signal not ready yet.', 'log-warn');
-      return;
-    }
-    navigator.clipboard.writeText(text).then(() => {
-      log('📋 Signal copied to clipboard!', 'log-ok');
-      setStatus('Signal copied!');
-    }).catch(() => {
-      // Fallback for older browsers
-      outSignal.select();
-      document.execCommand('copy');
-      log('📋 Signal copied (fallback method)', 'log-ok');
-      setStatus('Signal copied!');
+  function waitGatheringComplete() {
+    return new Promise((resolve) => {
+      if (pc.iceGatheringState === 'complete') return resolve();
+      const prev = pc.onicegatheringstatechange;
+      pc.onicegatheringstatechange = () => {
+        log(`🔄 Gathering → ${pc.iceGatheringState}`, 'log-info');
+        if (pc.iceGatheringState === 'complete') resolve();
+      };
     });
+  }
+
+  function listenCandidates(collectionName) {
+    const unsub = onSnapshot(collection(roomRef, collectionName), (snap) => {
+      snap.docChanges().forEach((ch) => {
+        if (ch.type === 'added' && ch.doc.data().candidate) {
+          log('📨 Remote candidate received', 'log-info');
+          pc.addIceCandidate(new RTCIceCandidate(ch.doc.data()));
+        }
+      });
+    });
+    unsubscribers.push(unsub);
+  }
+
+  /* ── Clean previous room data ───────────────── */
+  async function cleanRoom() {
+    try {
+      for (const sub of ['callerCandidates', 'calleeCandidates']) {
+        const snap = await getDocs(collection(roomRef, sub));
+        for (const d of snap.docs) await deleteDoc(d.ref);
+      }
+      await deleteDoc(roomRef);
+    } catch (_) {}
+  }
+
+  /* ═══════════════════════════════════════════════
+     AUTO-CONNECT — first device = caller, second = callee
+     ═══════════════════════════════════════════════ */
+  async function autoConnect() {
+    try {
+      log('═══════════════════════════════════════', 'log-dim');
+      log('⚡ Auto-connect starting…', 'log-info');
+      setStatus('Connecting…');
+
+      const stream = await acquireMedia();
+      const roomSnap = await getDoc(roomRef);
+
+      if (!roomSnap.exists() || !roomSnap.data().offer) {
+        /* ── CALLER (first device) ────────────── */
+        log('📡 You are the CALLER (first device)', 'log-info');
+        await cleanRoom();
+
+        buildPC('callerCandidates');
+        stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        log('📝 Offer created — gathering routes…', 'log-info');
+        setStatus('Waiting for peer…');
+
+        await waitGatheringComplete();
+
+        await setDoc(roomRef, {
+          offer: { type: pc.localDescription.type, sdp: pc.localDescription.sdp },
+          createdAt: Date.now()
+        });
+        log('✅ Offer published — waiting for peer…', 'log-ok');
+
+        // Watch for the answer
+        const unsub = onSnapshot(roomRef, async (snap) => {
+          const data = snap.data();
+          if (data?.answer && !pc.currentRemoteDescription) {
+            log('📨 Answer received!', 'log-ok');
+            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+            log('✅ Remote description set', 'log-ok');
+          }
+        });
+        unsubscribers.push(unsub);
+        listenCandidates('calleeCandidates');
+
+      } else {
+        /* ── CALLEE (second device) ───────────── */
+        log('📥 You are the CALLEE (second device)', 'log-info');
+
+        buildPC('calleeCandidates');
+        stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+        await pc.setRemoteDescription(new RTCSessionDescription(roomSnap.data().offer));
+        log('✅ Remote offer applied', 'log-ok');
+
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        log('📝 Answer created — gathering routes…', 'log-info');
+
+        await waitGatheringComplete();
+
+        await updateDoc(roomRef, {
+          answer: { type: pc.localDescription.type, sdp: pc.localDescription.sdp }
+        });
+        log('✅ Answer published', 'log-ok');
+        setStatus('Handshake done — connecting…');
+
+        listenCandidates('callerCandidates');
+      }
+
+    } catch (err) {
+      log(`❌ ${err.message}`, 'log-err');
+      setStatus('Error — check log.');
+    }
+  }
+
+  /* ── Force Play ─────────────────────────────── */
+  window.forcePlay = function () {
+    log('▶ Force Play', 'log-info');
+    remoteVideo.muted = false;
+    const p = remoteVideo.play();
+    if (p) p.then(() => log('✅ Playing with audio', 'log-ok'))
+           .catch(() => { remoteVideo.muted = true; remoteVideo.play(); });
   };
 
-  /* ── HANG UP ────────────────────────────────── */
-  window.hangUp = function () {
+  /* ── Hang Up ────────────────────────────────── */
+  window.hangUp = async function () {
     log('📴 Hanging up…', 'log-warn');
+    unsubscribers.forEach(fn => fn()); unsubscribers = [];
     if (pc) { pc.close(); pc = null; }
-    if (localStream) {
-      localStream.getTracks().forEach(t => t.stop());
-      localStream = null;
-    }
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     localVideo.srcObject = null;
     remoteVideo.srcObject = null;
-    outSignal.value = '';
-    inSignal.value = '';
-    setStatus('Call ended.');
-    log('✅ All resources released.', 'log-ok');
+    await cleanRoom();
+    setStatus('Ended. Refresh to reconnect.');
+    log('✅ Done.', 'log-ok');
   };
 
-  /* ── Boot ───────────────────────────────────── */
-  log('═══════════════════════════════════════', 'log-dim');
-  log('⚡ P2P Video Call Engine — IPv6 Direct', 'log-info');
-  log('🛡️  Strict IPv6 filtering · No TURN relay', 'log-info');
-  log('📋 Flow: Create Offer → Copy → Send to peer', 'log-dim');
-  log('📋 Peer: Paste signal → Accept Offer → Copy answer back', 'log-dim');
-  log('📋 Caller: Paste answer → Complete → Connected!', 'log-dim');
-  log('═══════════════════════════════════════', 'log-dim');
+  /* ── Go ─────────────────────────────────────── */
+  autoConnect();
 
-})();
 </script>
 </body>
 </html>
-
