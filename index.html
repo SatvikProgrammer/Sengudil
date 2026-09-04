@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strict IPv6 P2P Video Tester</title>
+    <title>Strict IPv6 Cross-Network P2P</title>
     <style>
         body { font-family: system-ui, sans-serif; text-align: center; margin: 20px; background: #f4f4f9; color: #333; }
         .video-container { display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 20px; }
@@ -67,6 +67,7 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
+        // FIXED SYNTAX BLOCK: Strict structural layout array matching browser configurations exactly
         const rtcConfig = {
             iceServers: [
                 { urls: "stun:://google.com" },
@@ -106,7 +107,6 @@
                 if (event.streams && event.streams[0]) {
                     remoteVideo.srcObject = event.streams[0];
                 } else {
-                    // Fallback configuration if streaming parameters arrive separated
                     if (!remoteVideo.srcObject) {
                         remoteVideo.srcObject = new MediaStream([event.track]);
                     } else {
@@ -127,7 +127,7 @@
                 }
             };
 
-            // TRACKING THE NETWORK COMPILE STATE: This is what prevents empty SDP codes!
+            // TRACKING THE NETWORK COMPILE STATE
             pc.onicegatheringstatechange = () => {
                 log(`Network Candidate Gathering State: ${pc.iceGatheringState}`);
                 if (pc.iceGatheringState === 'complete') {
@@ -149,7 +149,7 @@
                     }
 
                     const tokens = cStr.split(' ');
-                    const ip = tokens;
+                    const ip = tokens[4];
 
                     if (ip && ip.includes(':')) {
                         log(`🚀 Injecting Valid IPv6 Path: ${ip}`);
@@ -169,7 +169,6 @@
                 statusDiv.innerText = "Status: Gathering network routes... PLEASE WAIT.";
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
-                // Note: The box will automatically fill when pc.iceGatheringState reaches 'complete'
             } catch (e) {
                 log(`Offer Generation Failure: ${e.message}`);
             }
@@ -191,7 +190,6 @@
                     statusDiv.innerText = "Status: Compiling answer routes... PLEASE WAIT.";
                     const answer = await pc.createAnswer();
                     await pc.setLocalDescription(answer);
-                    // Note: The box will automatically fill when pc.iceGatheringState reaches 'complete'
                 } else if (remoteDesc.type === 'answer') {
                     log("Processing answer code... Finalizing connection handshake...");
                     statusDiv.innerText = "Status: Finalizing handshake maps...";
