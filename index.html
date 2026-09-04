@@ -247,17 +247,6 @@
     return pc;
   }
 
-  function waitGatheringComplete() {
-    return new Promise((resolve) => {
-      if (pc.iceGatheringState === 'complete') return resolve();
-      const prev = pc.onicegatheringstatechange;
-      pc.onicegatheringstatechange = () => {
-        log(`🔄 Gathering → ${pc.iceGatheringState}`, 'log-info');
-        if (pc.iceGatheringState === 'complete') resolve();
-      };
-    });
-  }
-
   function listenCandidates(collectionName) {
     const unsub = onSnapshot(collection(roomRef, collectionName), (snap) => {
       snap.docChanges().forEach((ch) => {
@@ -282,12 +271,12 @@
   }
 
   /* ═══════════════════════════════════════════════
-     AUTO-CONNECT — first device = caller, second = callee
+     AUTO-CONNECT — Trickle ICE (instant SDP, stream candidates)
      ═══════════════════════════════════════════════ */
   async function autoConnect() {
     try {
       log('═══════════════════════════════════════', 'log-dim');
-      log('⚡ Auto-connect starting…', 'log-info');
+      log('⚡ Auto-connect starting (trickle ICE)…', 'log-info');
       setStatus('Connecting…');
 
       const stream = await acquireMedia();
@@ -303,16 +292,14 @@
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        log('📝 Offer created — gathering routes…', 'log-info');
-        setStatus('Waiting for peer…');
 
-        await waitGatheringComplete();
-
+        // Publish offer IMMEDIATELY — no waiting for gathering
         await setDoc(roomRef, {
-          offer: { type: pc.localDescription.type, sdp: pc.localDescription.sdp },
+          offer: { type: offer.type, sdp: offer.sdp },
           createdAt: Date.now()
         });
-        log('✅ Offer published — waiting for peer…', 'log-ok');
+        log('✅ Offer published instantly — candidates trickling…', 'log-ok');
+        setStatus('Waiting for peer…');
 
         // Watch for the answer
         const unsub = onSnapshot(roomRef, async (snap) => {
@@ -338,14 +325,12 @@
 
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        log('📝 Answer created — gathering routes…', 'log-info');
 
-        await waitGatheringComplete();
-
+        // Publish answer IMMEDIATELY — candidates trickle via Firestore
         await updateDoc(roomRef, {
-          answer: { type: pc.localDescription.type, sdp: pc.localDescription.sdp }
+          answer: { type: answer.type, sdp: answer.sdp }
         });
-        log('✅ Answer published', 'log-ok');
+        log('✅ Answer published instantly — candidates trickling…', 'log-ok');
         setStatus('Handshake done — connecting…');
 
         listenCandidates('callerCandidates');
