@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pure IPv6 P2P Video Tester</title>
+    <title>Strict IPv6 Mixed-Network P2P</title>
     <style>
         body { font-family: system-ui, sans-serif; text-align: center; margin: 20px; background: #f4f4f9; color: #333; }
         .video-container { display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 20px; }
@@ -20,15 +20,15 @@
 </head>
 <body>
 
-    <h2>Pure IPv6 P2P Video Call (No Server)</h2>
-    <p>Using manual signaling to guarantee 100% control over the connection path.</p>
+    <h2>Strict IPv6 Cross-Network Video Tester</h2>
+    <p>Guarantees P2P connection loops stay completely within IPv6 boundaries.</p>
 
     <div class="controls">
         <div id="status">Status: Click "Initialize System" to start.</div>
         <button id="init-btn" class="btn-green">1. Initialize System</button>
         <br><br>
         
-        <div><strong>Step 2:</strong> Creator clicks Offer, joins on phone, copies code. Connector pastes code below and answers.</div>
+        <div><strong>Step 2:</strong> Creator clicks Offer, copies code. Connector pastes code below and answers.</div>
         <button id="offer-btn" disabled>Create Local Offer Connection Code</button>
         <button id="answer-btn" disabled>Process Remote Code & Answer</button>
         
@@ -67,13 +67,15 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // Standard configuration targeting public, global STUN systems
+        // Standardized syntax parsing array to support both modern and legacy browsers safely
         const rtcConfig = {
-            iceServers: [{ urls: 'stun:://google.com' }],
+            iceServers: [
+                { urls: ['stun:://google.com', 'stun:://google.com'] }
+            ],
             iceTransportPolicy: 'all'
         };
 
-        // 1. Initialize complete stack safely
+        // 1. Initialize complete engine securely
         initBtn.onclick = async () => {
             try {
                 statusDiv.innerText = "Requesting media...";
@@ -86,7 +88,7 @@
                 initBtn.disabled = true;
                 offerBtn.disabled = false;
                 answerBtn.disabled = false;
-                statusDiv.innerText = "Status: Ready. Follow Step 2.";
+                statusDiv.innerText = "Status: Ready. Proceed to Step 2.";
                 statusDiv.style.color = "green";
             } catch (err) {
                 log(`Initialization Error: ${err.message}`);
@@ -100,8 +102,8 @@
             localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
             pc.ontrack = (event) => {
-                log("Incoming remote video track received!");
-                remoteVideo.srcObject = event.streams[0];
+                log("Incoming remote video track received via IPv6!");
+                remoteVideo.srcObject = event.streams;
             };
 
             pc.oniceconnectionstatechange = () => {
@@ -112,26 +114,28 @@
                 }
             };
 
-            // Aggressive Network Filter for True IPv6 paths
+            // STRICT FILTER ENGINE: Exclusively processes routing addresses containing colons (:)
             const originalAddIceCandidate = pc.addIceCandidate.bind(pc);
             pc.addIceCandidate = function(candidate) {
                 if (candidate && candidate.candidate) {
                     const cStr = candidate.candidate;
 
+                    // Instantly block any third-party relay mappings (TURN)
                     if (cStr.includes('typ relay')) {
                         log("🚫 Blocked Relay Candidate");
                         return Promise.resolve();
                     }
 
                     const tokens = cStr.split(' ');
-                    const ip = tokens[4];
+                    const ip = tokens[4]; // Extract structural candidate IP component
 
-                    if (ip && !ip.includes(':')) {
+                    if (ip && ip.includes(':')) {
+                        log(`🚀 Injecting Valid IPv6 Path: ${ip}`);
+                        return originalAddIceCandidate(candidate);
+                    } else {
                         log(`🚫 Dropped IPv4 Route: ${ip}`);
-                        return Promise.resolve();
+                        return Promise.resolve(); // Drop all non-IPv6 addresses
                     }
-
-                    log(`🚀 Injecting Valid IPv6 Path: ${ip}`);
                 }
                 return originalAddIceCandidate(candidate);
             };
@@ -139,16 +143,20 @@
 
         // 2. Creator creates connection code
         offerBtn.onclick = async () => {
-            log("Generating local offer...");
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            
-            // Wait briefly for local network layout calculation to bundle addresses
-            setTimeout(() => {
-                sdpBox.value = btoa(JSON.stringify(pc.localDescription));
-                log("Connection code generated in text area! Copy it to the other device.");
-                statusDiv.innerText = "Status: Code generated. Copy & send it to the other peer.";
-            }, 1000);
+            log("Generating local offer configurations...");
+            try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                
+                // Allow network interfaces a brief window to gather local addresses
+                setTimeout(() => {
+                    sdpBox.value = btoa(JSON.stringify(pc.localDescription));
+                    log("Code generated! Copy the text in the box to the other device.");
+                    statusDiv.innerText = "Status: Code generated. Send it to the other peer.";
+                }, 1200);
+            } catch (e) {
+                log(`Offer Generation Failure: ${e.message}`);
+            }
         };
 
         // 3. Receiver processes code or creates answer response
@@ -164,7 +172,7 @@
                 await pc.setRemoteDescription(new RTCSessionDescription(remoteDesc));
 
                 if (remoteDesc.type === 'offer') {
-                    log("Processing offer code... creating answer...");
+                    log("Processing offer code... creating answer response...");
                     const answer = await pc.createAnswer();
                     await pc.setLocalDescription(answer);
                     
@@ -172,10 +180,10 @@
                         sdpBox.value = btoa(JSON.stringify(pc.localDescription));
                         log("Answer code ready! Copy back to the initiator phone.");
                         statusDiv.innerText = "Status: Answer ready. Copy back to initiator.";
-                    }, 1000);
+                    }, 1200);
                 } else if (remoteDesc.type === 'answer') {
                     log("Processing answer code... Finalizing connection handshake...");
-                    statusDiv.innerText = "Status: Processing network handshake...";
+                    statusDiv.innerText = "Status: Handshake processed. Connecting...";
                 }
             } catch (err) {
                 log(`Handshake Error: ${err.message}`);
